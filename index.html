@@ -180,7 +180,7 @@
         </div>
     </div>
 
-    <!-- PIN MODAL (NEW) -->
+    <!-- PIN MODAL -->
     <div id="pinModal" class="fixed inset-0 bg-gray-900 bg-opacity-70 hidden items-center justify-center p-4 z-50">
         <div class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-xs transform transition-all">
             <h3 class="text-xl font-bold mb-2 text-indigo-700 text-center">Masukkan PIN</h3>
@@ -354,25 +354,71 @@
             } catch (e) { console.error(e); }
         }
 
+        // PERBAIKAN UTAMA: renderProducts() menggunakan addEventListener
         function renderProducts() {
-            const cont = document.getElementById('productList'); const search = document.getElementById('productSearch').value.toLowerCase();
-            cont.innerHTML = ''; const filtered = state.products.filter(p => p.name.toLowerCase().includes(search));
-            if (filtered.length === 0) { cont.innerHTML = `<p class="col-span-full text-center text-gray-500 py-10">Tidak ada produk.</p>`; return; }
+            const cont = document.getElementById('productList');
+            const search = document.getElementById('productSearch').value.toLowerCase();
+            cont.innerHTML = '';
+
+            const filtered = state.products.filter(p => p.name.toLowerCase().includes(search));
+            if (filtered.length === 0) {
+                cont.innerHTML = `<p class="col-span-full text-center text-gray-500 py-10">Tidak ada produk.</p>`;
+                return;
+            }
+
             filtered.forEach(p => {
-                const ci = p.id % pastelColors.length; const col = pastelColors[ci];
+                const ci = p.id % pastelColors.length;
+                const col = pastelColors[ci];
+
                 const card = document.createElement('div');
                 card.className = `product-card ${col.bg} p-4 rounded-xl shadow-lg cursor-pointer ${p.stock === 0 ? 'opacity-50 grayscale' : ''}`;
-                card.onclick = () => p.stock > 0 ? addToCart(p) : showMessageModal('Stok Habis', `${p.name} habis.`);
-                card.innerHTML = `<h3 class="text-md font-semibold truncate ${col.text}">${p.name}</h3><p class="text-lg font-bold my-1 ${col.text}">${formatRupiah(p.price)}</p><p class="text-sm ${col.text}">Stok: <span class="${p.stock > 10 ? 'text-green-700' : p.stock > 0 ? 'text-orange-700' : 'text-red-700'} font-medium">${p.stock}</span></p><button onclick="event.stopPropagation(); editProduct(${p.id})" class="mt-2 text-xs text-blue-700 hover:text-blue-900">Edit</button>`;
+
+                card.innerHTML = `
+                    <h3 class="text-md font-semibold truncate ${col.text}">${p.name}</h3>
+                    <p class="text-lg font-bold my-1 ${col.text}">${formatRupiah(p.price)}</p>
+                    <p class="text-sm ${col.text}">Stok: <span class="${p.stock > 10 ? 'text-green-700' : p.stock > 0 ? 'text-orange-700' : 'text-red-700'} font-medium">${p.stock}</span></p>
+                    <button type="button" class="edit-btn mt-2 text-xs text-blue-700 hover:text-blue-900">Edit</button>
+                `;
+
+                // Klik card = tambah ke keranjang
+                card.addEventListener('click', (e) => {
+                    if (e.target.classList.contains('edit-btn')) return;
+                    if (p.stock > 0) {
+                        addToCart(p);
+                    } else {
+                        showMessageModal('Stok Habis', `${p.name} habis.`);
+                    }
+                });
+
+                // Tombol Edit
+                const editBtn = card.querySelector('.edit-btn');
+                editBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    editProduct(p.id);
+                });
+
                 cont.appendChild(card);
             });
         }
 
+        function editProduct(id) {
+            showProductModal(id);
+        }
+
         function addToCart(p) {
-            const ex = state.cart.find(i => i.id === p.id);
-            if (ex) { if (ex.quantity < p.stock) ex.quantity++; else { showMessageModal('Stok Maks', `Stok ${p.name} terbatas.`); return; } }
-            else state.cart.push({ id: p.id, name: p.name, price: p.price, quantity: 1, stock: p.stock });
-            renderCart(); updateTotals();
+            const existing = state.cart.find(i => i.id === p.id);
+            if (existing) {
+                if (existing.quantity < p.stock) {
+                    existing.quantity++;
+                } else {
+                    showMessageModal('Stok Maks', `Stok ${p.name} terbatas.`);
+                    return;
+                }
+            } else {
+                state.cart.push({ id: p.id, name: p.name, price: p.price, quantity: 1, stock: p.stock });
+            }
+            renderCart();
+            updateTotals();
         }
 
         function updateCartQuantity(id, qty) {
