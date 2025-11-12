@@ -13,10 +13,16 @@
         /* Diberi padding-bottom agar konten tidak tertutup bottom bar */
         #mainContent { flex-grow: 1; overflow-y: hidden; padding-bottom: 4rem; /* Sesuaikan dengan tinggi nav bar */ } 
 
-        /* Style untuk daftar keranjang */
+        /* Style untuk daftar keranjang - DITINGKATKAN */
         #cartList {
-            max-height: 250px;
+            max-height: 400px; /* Nilai yang lebih tinggi untuk tampilan mobile/desktop kecil */
             overflow-y: auto;
+        }
+        /* Override max-height untuk layar desktop yang lebih besar */
+        @media (min-width: 768px) {
+            #cartList {
+                max-height: 600px; /* Nilai yang sangat tinggi untuk ruang kerja yang lebih baik */
+            }
         }
 
         /* Style untuk kartu produk dan transisi hover */
@@ -36,9 +42,9 @@
             margin: 0 auto;
             padding: 10px;
         }
-        /* Style untuk bottom bar */
+        /* Style untuk bottom bar - DITINGKATKAN (menambahkan item-center dan justify-center) */
         .tab-button-bottom {
-            @apply flex flex-col items-center p-2 text-center text-xs font-semibold hover:bg-gray-50 transition duration-150 flex-grow;
+            @apply flex flex-col items-center justify-center p-2 text-center text-xs font-semibold hover:bg-gray-50 transition duration-150 flex-grow;
         }
         .tab-button-bottom.active {
             @apply border-indigo-600 text-indigo-600;
@@ -74,7 +80,7 @@
                     <div class="bg-white p-4 rounded-xl shadow-lg flex flex-col h-full overflow-y-auto">
                         <h2 class="text-xl font-bold mb-4 text-indigo-700 border-b pb-2">Keranjang Belanja</h2>
 
-                        <div id="cartList" class="space-y-3 mb-4 flex-grow p-3 rounded-lg shadow-inner border max-h-48 md:max-h-72 overflow-y-auto">
+                        <div id="cartList" class="space-y-3 mb-4 flex-grow p-3 rounded-lg shadow-inner border overflow-y-auto">
                             <p id="emptyCartMessage" class="text-gray-500 text-center py-4">Keranjang kosong. Silakan pilih produk.</p>
                             </div>
 
