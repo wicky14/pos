@@ -8,112 +8,55 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; }
-        /* Mengatur agar konten app mengambil sisa tinggi layar */
         #app { min-height: 100vh; display: flex; flex-direction: column; }
-        /* Diberi padding-bottom agar konten tidak tertutup bottom bar */
-        #mainContent { flex-grow: 1; overflow-y: hidden; padding-bottom: 4rem; /* Sesuaikan dengan tinggi nav bar */ } 
-
-        /* Style untuk daftar keranjang - DITINGKATKAN */
-        #cartList {
-            max-height: 400px; /* Nilai yang lebih tinggi untuk tampilan mobile/desktop kecil */
-            overflow-y: auto;
-        }
-        /* Override max-height untuk layar desktop yang lebih besar */
-        @media (min-width: 768px) {
-            #cartList {
-                max-height: 600px; /* Nilai yang sangat tinggi untuk ruang kerja yang lebih baik */
-            }
-        }
-
-        /* Style untuk kartu produk dan transisi hover */
-        .product-card {
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-            @apply hover:scale-[1.02] hover:shadow-xl;
-        }
-
-        .input-rupiah {
-            text-align: right;
-        }
-        /* Style untuk pratinjau struk (hanya untuk dicetak) */
-        .receipt-print-area {
-            font-family: monospace;
-            font-size: 11px;
-            width: 80mm; /* Lebar kertas struk umum */
-            margin: 0 auto;
-            padding: 10px;
-        }
-        /* Style untuk bottom bar - DITINGKATKAN (menambahkan item-center dan justify-center) */
-        .tab-button-bottom {
-            @apply flex flex-col items-center justify-center p-2 text-center text-xs font-semibold hover:bg-gray-50 transition duration-150 flex-grow;
-        }
-        .tab-button-bottom.active {
-            @apply border-indigo-600 text-indigo-600;
-        }
-        .tab-button-bottom:not(.active) {
-            @apply border-transparent text-gray-600;
-        }
+        #mainContent { flex-grow: 1; overflow-y: hidden; padding-bottom: 4rem; }
+        #cartList { max-height: 400px; overflow-y: auto; }
+        @media (min-width: 768px) { #cartList { max-height: 600px; } }
+        .product-card { transition: transform 0.2s ease, box-shadow 0.2s ease; @apply hover:scale-[1.02] hover:shadow-xl; }
+        .input-rupiah { text-align: right; }
+        .receipt-print-area { font-family: monospace; font-size: 11px; width: 80mm; margin: 0 auto; padding: 10px; }
+        .tab-button-bottom { @apply flex flex-col items-center justify-center p-2 text-center text-xs font-semibold hover:bg-gray-50 transition duration-150 flex-grow; }
+        .tab-button-bottom.active { @apply border-indigo-600 text-indigo-600; }
+        .tab-button-bottom:not(.active) { @apply border-transparent text-gray-600; }
+        .pin-dot { transition: background-color 0.2s; }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800">
 
     <div id="app">
-        
         <div id="mainContent" class="overflow-y-auto">
+            <!-- POS VIEW -->
             <div id="posView" class="h-full flex flex-col md:flex-row p-2 sm:p-4 bg-gray-50">
-                 <div class="w-full md:w-3/5 p-2 sm:p-4 flex flex-col bg-white shadow-lg rounded-xl overflow-hidden mb-4 md:mb-0 md:h-full flex-shrink-0">
+                <div class="w-full md:w-3/5 p-2 sm:p-4 flex flex-col bg-white shadow-lg rounded-xl overflow-hidden mb-4 md:mb-0 md:h-full flex-shrink-0">
                     <header class="mb-4 flex justify-between items-center border-b pb-3">
                         <h1 class="text-xl font-bold text-indigo-600">Daftar Menu / Produk</h1>
                         <button onclick="showProductModal()" class="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-3 sm:px-4 rounded-lg shadow-md transition duration-150 text-sm sm:text-base">
                             + Tambah Produk
                         </button>
                     </header>
-
                     <div class="mb-4">
                         <input type="text" id="productSearch" oninput="renderProducts()" placeholder="Cari produk..." class="w-full p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
                     </div>
-
-                    <div id="productList" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 flex-grow overflow-y-auto">
-                        </div>
+                    <div id="productList" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 flex-grow overflow-y-auto"></div>
                 </div>
 
                 <div class="w-full md:w-2/5 md:pl-4 flex flex-col bg-gray-100 flex-shrink-0">
                     <div class="bg-white p-4 rounded-xl shadow-lg flex flex-col h-full overflow-y-auto">
                         <h2 class="text-xl font-bold mb-4 text-indigo-700 border-b pb-2">Keranjang Belanja</h2>
-
                         <div id="cartList" class="space-y-3 mb-4 flex-grow p-3 rounded-lg shadow-inner border overflow-y-auto">
                             <p id="emptyCartMessage" class="text-gray-500 text-center py-4">Keranjang kosong. Silakan pilih produk.</p>
-                            </div>
-
-                        <div class="bg-gray-50 p-4 rounded-lg shadow-inner space-y-2 mb-4">
-                            <div class="flex justify-between font-medium">
-                                <span>Subtotal (Harga Jual):</span>
-                                <span id="subtotal">Rp0</span>
-                            </div>
-                            <div class="flex justify-between font-medium text-sm text-gray-600 border-t pt-2">
-                                <span>DPP (Dasar Pengenaan Pajak):</span>
-                                <span id="dppAmount">Rp0</span>
-                            </div>
-                            <div class="flex justify-between font-medium text-sm text-gray-600">
-                                <span>Pajak (<span id="taxRateDisplay">0</span>% PPN):</span>
-                                <span id="taxAmount">Rp0</span>
-                            </div>
-                            <div class="flex justify-between items-center border-t pt-2">
-                                <span>Diskon (%):</span>
-                                <input type="number" id="discountPercent" value="0" min="0" max="100" oninput="updateTotals()" class="w-16 p-1 border rounded text-right">
-                            </div>
-                            <div class="flex justify-between text-xl font-bold pt-2 border-t">
-                                <span>TOTAL (Termasuk Pajak):</span>
-                                <span id="totalAmount" class="text-indigo-600">Rp0</span>
-                            </div>
                         </div>
-
+                        <div class="bg-gray-50 p-4 rounded-lg shadow-inner space-y-2 mb-4">
+                            <div class="flex justify-between font-medium"><span>Subtotal (Harga Jual):</span><span id="subtotal">Rp0</span></div>
+                            <div class="flex justify-between font-medium text-sm text-gray-600 border-t pt-2"><span>DPP (Dasar Pengenaan Pajak):</span><span id="dppAmount">Rp0</span></div>
+                            <div class="flex justify-between font-medium text-sm text-gray-600"><span>Pajak (<span id="taxRateDisplay">0</span>% PPN):</span><span id="taxAmount">Rp0</span></div>
+                            <div class="flex justify-between items-center border-t pt-2"><span>Diskon (%):</span><input type="number" id="discountPercent" value="0" min="0" max="100" oninput="updateTotals()" class="w-16 p-1 border rounded text-right"></div>
+                            <div class="flex justify-between text-xl font-bold pt-2 border-t"><span>TOTAL (Termasuk Pajak):</span><span id="totalAmount" class="text-indigo-600">Rp0</span></div>
+                        </div>
                         <div class="space-y-3 pb-2">
                             <h3 class="font-semibold text-gray-700">Pembayaran</h3>
                             <input type="number" id="paymentAmount" oninput="calculateChange()" placeholder="Jumlah Uang Dibayar" class="w-full p-3 border border-gray-300 rounded-lg input-rupiah focus:ring-indigo-500 focus:border-indigo-500">
-                            <div class="flex justify-between font-bold text-xl">
-                                <span>Kembalian:</span>
-                                <span id="changeAmount" class="text-green-600">Rp0</span>
-                            </div>
+                            <div class="flex justify-between font-bold text-xl"><span>Kembalian:</span><span id="changeAmount" class="text-green-600">Rp0</span></div>
                             <button onclick="processTransaction()" id="checkoutButton" disabled class="w-full bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-3 rounded-lg transition duration-150 disabled:bg-indigo-300 shadow-xl">
                                 Proses Transaksi
                             </button>
@@ -122,6 +65,7 @@
                 </div>
             </div>
 
+            <!-- HISTORY VIEW -->
             <div id="historyView" class="p-4 sm:p-6 hidden">
                 <h2 class="text-2xl font-bold mb-6 text-indigo-700">Riwayat Transaksi</h2>
                 <div class="mb-6 p-4 border rounded-lg bg-white shadow">
@@ -135,78 +79,60 @@
                 </div>
                 <div id="historyList" class="space-y-4">
                     <p class="text-center text-gray-500" id="loadingHistory">Memuat riwayat...</p>
-                    </div>
+                </div>
             </div>
 
+            <!-- SETTINGS VIEW -->
             <div id="settingsView" class="p-4 sm:p-6 hidden bg-white shadow-xl rounded-xl m-2 sm:m-4 max-w-4xl mx-auto">
                 <h2 class="text-2xl font-bold mb-6 text-indigo-700 border-b pb-2">Pengaturan Aplikasi</h2>
-
                 <div class="mb-8 border p-6 rounded-lg bg-gray-50">
                     <h3 class="text-xl font-bold mb-4 text-gray-800">1. Konfigurasi Struk & Pajak</h3>
                     <div class="space-y-4">
-                        <div>
-                            <label for="cashierNameInput" class="block text-sm font-medium text-gray-700">Nama Kasir (Dicetak di Struk)</label>
-                            <input type="text" id="cashierNameInput" class="mt-1 block w-full p-3 border border-gray-300 rounded-lg" placeholder="Contoh: Budi, atau biarkan kosong">
-                        </div>
-                        <div>
-                            <label for="taxPercentInput" class="block text-sm font-medium text-gray-700">Persentase Pajak Inklusif (%)</label>
-                            <input type="number" id="taxPercentInput" min="0" max="100" class="mt-1 block w-full p-3 border border-gray-300 rounded-lg" placeholder="Contoh: 11">
-                        </div>
-                        <div>
-                            <label for="receiptHeader" class="block text-sm font-medium text-gray-700">Teks Header Struk (Maks 3 baris)</label>
-                            <textarea id="receiptHeader" rows="3" class="mt-1 block w-full p-3 border border-gray-300 rounded-lg" placeholder="Contoh:&#10;WARUNG MAKAN SEDERHANA&#10;Jl. Kenanga No. 12&#10;Telp: 0812-XXXX-XXXX"></textarea>
-                        </div>
-                        <div>
-                            <label for="receiptFooter" class="block text-sm font-medium text-gray-700">Teks Footer Struk (Pesan Penutup)</label>
-                            <textarea id="receiptFooter" rows="2" class="mt-1 block w-full p-3 border border-gray-300 rounded-lg" placeholder="Contoh:&#10;Terima kasih atas kunjungan Anda!&#10;Barang yang sudah dibeli tidak dapat ditukar/dikembalikan."></textarea>
-                        </div>
+                        <div><label for="cashierNameInput" class="block text-sm font-medium text-gray-700">Nama Kasir (Dicetak di Struk)</label><input type="text" id="cashierNameInput" class="mt-1 block w-full p-3 border border-gray-300 rounded-lg" placeholder="Contoh: Budi"></div>
+                        <div><label for="taxPercentInput" class="block text-sm font-medium text-gray-700">Persentase Pajak Inklusif (%)</label><input type="number" id="taxPercentInput" min="0" max="100" class="mt-1 block w-full p-3 border border-gray-300 rounded-lg" placeholder="Contoh: 11"></div>
+                        <div><label for="receiptHeader" class="block text-sm font-medium text-gray-700">Teks Header Struk (Maks 3 baris)</label><textarea id="receiptHeader" rows="3" class="mt-1 block w-full p-3 border border-gray-300 rounded-lg" placeholder="Contoh:&#10;WARUNG MAKAN SEDERHANA&#10;Jl. Kenanga No. 12&#10;Telp: 0812-XXXX-XXXX"></textarea></div>
+                        <div><label for="receiptFooter" class="block text-sm font-medium text-gray-700">Teks Footer Struk</label><textarea id="receiptFooter" rows="2" class="mt-1 block w-full p-3 border border-gray-300 rounded-lg" placeholder="Contoh:&#10;Terima kasih atas kunjungan Anda!"></textarea></div>
                         <button onclick="saveSettings()" class="bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-150">Simpan Konfigurasi</button>
                     </div>
                 </div>
-
                 <div class="mb-8 border p-6 rounded-lg bg-gray-50">
                     <h3 class="text-xl font-bold mb-4 text-gray-800">2. Ekspor & Impor Data</h3>
                     <div class="flex flex-col space-y-4 md:flex-row md:space-y-0 md:space-x-4">
-                        <div class="flex-1">
-                            <button onclick="exportData()" class="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-3 rounded-lg shadow-md transition duration-150">
-                                Ekspor Semua Data (JSON)
-                            </button>
-                            <p class="text-sm text-gray-600 mt-2">Unduh Produk, Transaksi, dan Pengaturan.</p>
-                        </div>
-                        <div class="flex-1">
-                            <label for="importFile" class="block w-full text-center bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-3 rounded-lg shadow-md cursor-pointer transition duration-150">
-                                Impor Data dari JSON
-                            </label>
-                            <input type="file" id="importFile" accept="application/json" class="hidden" onchange="importData(event)">
-                            <p class="text-sm text-gray-600 mt-2">Peringatan: Ini akan menimpa data yang ada.</p>
-                        </div>
+                        <div class="flex-1"><button onclick="exportData()" class="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-3 rounded-lg shadow-md transition duration-150">Ekspor Semua Data (JSON)</button><p class="text-sm text-gray-600 mt-2">Unduh Produk, Transaksi, dan Pengaturan.</p></div>
+                        <div class="flex-1"><label for="importFile" class="block w-full text-center bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-3 rounded-lg shadow-md cursor-pointer transition duration-150">Impor Data dari JSON</label><input type="file" id="importFile" accept="application/json" class="hidden" onchange="importData(event)"><p class="text-sm text-gray-600 mt-2">Peringatan: Ini akan menimpa data yang ada.</p></div>
+                    </div>
+                </div>
+                <div class="mb-8 border p-6 rounded-lg bg-gray-50">
+                    <h3 class="text-xl font-bold mb-4 text-gray-800">3. Log Seluruh Kegiatan User</h3>
+                    <p class="text-gray-600 mb-4">Catatan semua aktivitas disimpan secara lokal.</p>
+                    <div class="mt-4 flex flex-col space-y-4 md:flex-row md:space-y-0 md:space-x-4">
+                        <button onclick="exportActivityLogs()" class="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 rounded-lg shadow-md transition duration-150">Unduh Log Aktivitas (JSON)</button>
+                        <button onclick="showClearLogsConfirm()" class="flex-1 bg-red-500 hover:bg-red-600 text-white font-semibold py-3 rounded-lg shadow-md transition duration-150">Hapus Semua Log</button>
                     </div>
                 </div>
             </div>
-
         </div>
-        
+
+        <!-- BOTTOM NAV -->
         <nav class="fixed bottom-0 left-0 right-0 bg-white shadow-2xl z-40">
             <div class="flex border-t border-gray-200 justify-around">
-                <button class="tab-button-bottom tab-button active border-t-2"
-                        onclick="switchTab('posView')" data-tab="posView">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v1a3 3 0 01-3 3h-2a3 3 0 01-3-3v-1m0 0h12m-6 4h.01M3 8v11a3 3 0 003 3h12a3 3 0 003-3V8m-14 0h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v1a2 2 0 002 2z"></path></svg>
+                <button class="tab-button-bottom tab-button active border-t-2" onclick="switchTab('posView')" data-tab="posView">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v1a3 3 0 01-3 3h-2a3 3 0 01-3-3v-1m0 0h12m-6 4h.01M3 8v11a3 3 0 003 3h12a3 3 0 003-3V8m-14 0h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v1a2 2 0 002 2z"></path></svg>
                     <span>Utama</span>
                 </button>
-                <button class="tab-button-bottom tab-button"
-                        onclick="switchTab('historyView')" data-tab="historyView">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <button class="tab-button-bottom tab-button" onclick="switchTab('historyView')" data-tab="historyView">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                     <span>Riwayat</span>
                 </button>
-                <button class="tab-button-bottom tab-button"
-                        onclick="switchTab('settingsView')" data-tab="settingsView">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.345 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                <button class="tab-button-bottom tab-button" onclick="switchTab('settingsView')" data-tab="settingsView">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.345 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                     <span>Pengaturan</span>
                 </button>
             </div>
         </nav>
-        </div>
+    </div>
 
+    <!-- MODALS -->
     <div id="messageModal" class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden items-center justify-center p-4 z-50">
         <div class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-sm">
             <h3 class="text-xl font-bold mb-3 text-red-600" id="messageTitle">Peringatan!</h3>
@@ -220,7 +146,7 @@
             <h3 class="text-xl font-bold mb-3 text-orange-600" id="confirmTitle">Konfirmasi!</h3>
             <p id="confirmText" class="text-gray-700 mb-5"></p>
             <div class="flex space-x-4">
-                <button id="confirmYesButton" class="flex-1 bg-red-500 hover:bg-red-600 text-white font-semibold py-2 rounded-lg">Ya, Lanjutkan</button>
+                <button id="confirmYesButton" class="flex-1 bg-red-500 hover:bg-red-600 text-white font-semibold py-2 rounded-lg">Ya</button>
                 <button id="confirmNoButton" class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 rounded-lg">Batal</button>
             </div>
         </div>
@@ -228,81 +154,81 @@
 
     <div id="productModal" class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden items-center justify-center p-4 z-50">
         <div class="bg-white rounded-xl shadow-2xl p-8 w-full max-w-md">
-            <h3 class="text-2xl font-bold mb-6 text-indigo-700" id="productModalTitle">Tambah Produk Baru</h3>
+            <h3 class="text-2xl font-bold mb-6 text-indigo-700" id="productModalTitle">Tambah Produk</h3>
             <form id="productForm" onsubmit="saveProduct(event)">
                 <input type="hidden" id="productId">
-                <div class="mb-4">
-                    <label for="productName" class="block text-sm font-medium text-gray-700">Nama Produk</label>
-                    <input type="text" id="productName" required class="mt-1 block w-full p-3 border border-gray-300 rounded-lg">
-                </div>
-                <div class="mb-4">
-                    <label for="productPrice" class="block text-sm font-medium text-gray-700">Harga (Rp)</label>
-                    <input type="number" id="productPrice" min="100" required class="mt-1 block w-full p-3 border border-gray-300 rounded-lg input-rupiah">
-                </div>
-                <div class="mb-6">
-                    <label for="productStock" class="block text-sm font-medium text-gray-700">Stok Awal</label>
-                    <input type="number" id="productStock" min="0" required class="mt-1 block w-full p-3 border border-gray-300 rounded-lg input-rupiah">
-                </div>
+                <div class="mb-4"><label for="productName" class="block text-sm font-medium text-gray-700">Nama Produk</label><input type="text" id="productName" required class="mt-1 block w-full p-3 border border-gray-300 rounded-lg"></div>
+                <div class="mb-4"><label for="productPrice" class="block text-sm font-medium text-gray-700">Harga (Rp)</label><input type="number" id="productPrice" min="100" required class="mt-1 block w-full p-3 border border-gray-300 rounded-lg input-rupiah"></div>
+                <div class="mb-6"><label for="productStock" class="block text-sm font-medium text-gray-700">Stok Awal</label><input type="number" id="productStock" min="0" required class="mt-1 block w-full p-3 border border-gray-300 rounded-lg input-rupiah"></div>
                 <div class="flex space-x-4">
-                    <button type="submit" id="productSaveButton" class="flex-1 bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-3 rounded-lg shadow-md transition duration-150">Simpan Produk</button>
+                    <button type="submit" id="productSaveButton" class="flex-1 bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-3 rounded-lg shadow-md transition duration-150">Simpan</button>
                     <button type="button" onclick="hideProductModal()" class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-3 rounded-lg">Batal</button>
                 </div>
                 <button type="button" id="productDeleteButton" onclick="deleteProduct()" class="mt-4 w-full bg-red-500 hover:bg-red-600 text-white font-semibold py-3 rounded-lg shadow-md transition duration-150 hidden">Hapus Produk</button>
             </form>
         </div>
     </div>
-    
+
     <div id="receiptModal" class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden items-center justify-center p-4 z-50">
         <div class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-md">
             <h3 class="text-2xl font-bold mb-4 text-indigo-700 text-center">Pratinjau Struk</h3>
-            <div id="receiptPrintArea" class="border border-gray-300 p-4 bg-white overflow-y-auto max-h-[70vh]">
-                </div>
+            <div id="receiptPrintArea" class="border border-gray-300 p-4 bg-white overflow-y-auto max-h-[70vh]"></div>
             <div class="flex space-x-4 mt-6">
-                <button onclick="printReceipt()" class="flex-1 bg-green-500 hover:bg-green-600 text-white font-semibold py-3 rounded-lg shadow-md transition duration-150">
-                    Cetak Struk
-                </button>
+                <button onclick="printReceipt()" class="flex-1 bg-green-500 hover:bg-green-600 text-white font-semibold py-3 rounded-lg shadow-md transition duration-150">Cetak Struk</button>
                 <button onclick="hideReceiptModal()" class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-3 rounded-lg">Tutup</button>
             </div>
         </div>
     </div>
 
+    <!-- PIN MODAL (NEW) -->
+    <div id="pinModal" class="fixed inset-0 bg-gray-900 bg-opacity-70 hidden items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-xs transform transition-all">
+            <h3 class="text-xl font-bold mb-2 text-indigo-700 text-center">Masukkan PIN</h3>
+            <p class="text-sm text-gray-600 text-center mb-6" id="pinModalMessage">Gunakan keypad untuk memasukkan PIN 4 digit.</p>
+            <div class="flex justify-center space-x-3 mb-6">
+                <div class="pin-dot w-4 h-4 bg-gray-300 rounded-full"></div>
+                <div class="pin-dot w-4 h-4 bg-gray-300 rounded-full"></div>
+                <div class="pin-dot w-4 h-4 bg-gray-300 rounded-full"></div>
+                <div class="pin-dot w-4 h-4 bg-gray-300 rounded-full"></div>
+            </div>
+            <div class="grid grid-cols-3 gap-3">
+                <button type="button" class="pin-btn bg-gray-100 hover:bg-gray-200 text-lg font-semibold py-4 rounded-xl transition" data-value="1">1</button>
+                <button type="button" class="pin-btn bg-gray-100 hover:bg-gray-200 text-lg font-semibold py-4 rounded-xl transition" data-value="2">2</button>
+                <button type="button" class="pin-btn bg-gray-100 hover:bg-gray-200 text-lg font-semibold py-4 rounded-xl transition" data-value="3">3</button>
+                <button type="button" class="pin-btn bg-gray-100 hover:bg-gray-200 text-lg font-semibold py-4 rounded-xl transition" data-value="4">4</button>
+                <button type="button" class="pin-btn bg-gray-100 hover:bg-gray-200 text-lg font-semibold py-4 rounded-xl transition" data-value="5">5</button>
+                <button type="button" class="pin-btn bg-gray-100 hover:bg-gray-200 text-lg font-semibold py-4 rounded-xl transition" data-value="6">6</button>
+                <button type="button" class="pin-btn bg-gray-100 hover:bg-gray-200 text-lg font-semibold py-4 rounded-xl transition" data-value="7">7</button>
+                <button type="button" class="pin-btn bg-gray-100 hover:bg-gray-200 text-lg font-semibold py-4 rounded-xl transition" data-value="8">8</button>
+                <button type="button" class="pin-btn bg-gray-100 hover:bg-gray-200 text-lg font-semibold py-4 rounded-xl transition" data-value="9">9</button>
+                <button type="button" class="pin-btn bg-red-100 hover:bg-red-200 text-red-700 font-bold py-4 rounded-xl transition" id="pinClear">
+                    <svg class="w-6 h-6 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2M3 12l6.414 6.414a2 2 0 001.414.586H19a2 2 0 002-2V7a2 2 0 00-2-2h-8.172a2 2 0 00-1.414.586L3 12z"></path></svg>
+                </button>
+                <button type="button" class="pin-btn bg-gray-100 hover:bg-gray-200 text-lg font-semibold py-4 rounded-xl transition" data-value="0">0</button>
+                <button type="button" class="pin-btn bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-4 rounded-xl transition" id="pinCancel">Batal</button>
+            </div>
+            <div class="mt-6 flex justify-center">
+                <button id="pinSubmit" disabled class="w-full bg-indigo-600 text-white font-bold py-3 rounded-xl transition opacity-50 cursor-not-allowed">Konfirmasi</button>
+            </div>
+        </div>
+    </div>
 
     <script>
-        // --- 1. Konfigurasi dan Variabel Global ---
-        const DB_NAME = 'POSAppDB';
-        const DB_VERSION = 2; 
-        const STORE_PRODUCTS = 'products';
-        const STORE_TRANSACTIONS = 'transactions';
-        const STORE_SETTINGS = 'settings'; 
-        let db; // IndexedDB instance
-        let resolveConfirm; 
-        
-        // Define a set of pastel color classes and corresponding text colors for product cards
+        // --- CONFIG & STATE ---
+        const DB_NAME = 'POSAppDB', DB_VERSION = 3;
+        const STORE_PRODUCTS = 'products', STORE_TRANSACTIONS = 'transactions', STORE_SETTINGS = 'settings', STORE_ACTIVITY_LOGS = 'activityLogs';
+        let db, resolveConfirm, pinCallback = null, currentPin = '';
+        const ADMIN_PIN = '1234'; // Ganti PIN di sini
+
         const pastelColors = [
-            { bg: 'bg-teal-100', text: 'text-teal-900' },
-            { bg: 'bg-rose-100', text: 'text-rose-900' },
-            { bg: 'bg-blue-100', text: 'text-blue-900' },
-            { bg: 'bg-lime-100', text: 'text-lime-900' },
-            { bg: 'bg-indigo-100', text: 'text-indigo-900' },
-            { bg: 'bg-amber-100', text: 'text-amber-900' },
+            { bg: 'bg-teal-100', text: 'text-teal-900' }, { bg: 'bg-rose-100', text: 'text-rose-900' },
+            { bg: 'bg-blue-100', text: 'text-blue-900' }, { bg: 'bg-lime-100', text: 'text-lime-900' },
+            { bg: 'bg-indigo-100', text: 'text-indigo-900' }, { bg: 'bg-amber-100', text: 'text-amber-900' },
         ];
-        
+
         let state = {
-            products: [],
-            cart: [], // { id, name, price, quantity }
-            total: 0,
-            subtotal: 0,
-            discountPercent: 0,
-            taxPercent: 11, // Default 11% PPN
-            dpp: 0, // Dasar Pengenaan Pajak
-            tax: 0, // Jumlah Pajak (PPN)
-            change: 0,
-            settings: {
-                receiptHeader: "TOKO SEDERHANA\nJl. Raya No. 1",
-                receiptFooter: "Terima kasih!",
-                taxPercent: 11, // Default 11% PPN
-                cashierName: '' // Fitur Baru: Nama Kasir
-            },
+            products: [], cart: [], total: 0, subtotal: 0, discountPercent: 0, taxPercent: 11, dpp: 0, tax: 0, change: 0,
+            settings: { receiptHeader: "TOKO SEDERHANA\nJl. Raya No. 1", receiptFooter: "Terima kasih!", taxPercent: 11, cashierName: '' },
             currentView: 'posView'
         };
 
@@ -315,963 +241,396 @@
             { id: 6, name: 'Mie Ayam Bakso', price: 22000, stock: 40 },
         ];
 
-        // --- 2. Utilitas ---
-
-        /**
-         * Mengubah angka menjadi format Rupiah Indonesia.
-         * @param {number} number
-         * @returns {string} Format Rupiah
-         */
+        // --- UTILS ---
         function formatRupiah(number) {
             if (typeof number !== 'number' || isNaN(number)) return 'Rp0';
-            // Math.round digunakan untuk menghindari pecahan yang tidak perlu akibat pembagian DPP
-            const roundedNumber = Math.round(number);
-            return new Intl.NumberFormat('id-ID', {
-                style: 'currency',
-                currency: 'IDR',
-                minimumFractionDigits: 0
-            }).format(roundedNumber);
+            return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(Math.round(number));
         }
 
-        /**
-         * Menampilkan modal pesan (alert kustom).
-         * @param {string} title
-         * @param {string} message
-         * @param {string} colorClass Tailwind text color class (e.g., 'text-red-600')
-         */
         function showMessageModal(title, message, colorClass = 'text-red-600') {
             document.getElementById('messageTitle').textContent = title;
             document.getElementById('messageTitle').className = `text-xl font-bold mb-3 ${colorClass}`;
             document.getElementById('messageText').textContent = message;
-            document.getElementById('messageModal').classList.remove('hidden');
-            document.getElementById('messageModal').classList.add('flex');
+            document.getElementById('messageModal').classList.remove('hidden'); document.getElementById('messageModal').classList.add('flex');
         }
 
-        function hideMessageModal() {
-            document.getElementById('messageModal').classList.remove('flex');
-            document.getElementById('messageModal').classList.add('hidden');
-        }
+        function hideMessageModal() { document.getElementById('messageModal').classList.remove('flex'); document.getElementById('messageModal').classList.add('hidden'); }
 
-        /**
-         * Menampilkan modal konfirmasi kustom.
-         * @param {string} title
-         * @param {string} message
-         * @returns {Promise<boolean>} Resolves to true if confirmed, false otherwise.
-         */
         function showConfirmModal(title, message) {
-            document.getElementById('confirmTitle').textContent = title;
-            document.getElementById('confirmText').textContent = message;
-            document.getElementById('confirmModal').classList.remove('hidden');
-            document.getElementById('confirmModal').classList.add('flex');
-
-            return new Promise(resolve => {
-                resolveConfirm = resolve;
-            });
+            document.getElementById('confirmTitle').textContent = title; document.getElementById('confirmText').textContent = message;
+            document.getElementById('confirmModal').classList.remove('hidden'); document.getElementById('confirmModal').classList.add('flex');
+            return new Promise(resolve => { resolveConfirm = resolve; });
         }
 
-        function hideConfirmModal() {
-            document.getElementById('confirmModal').classList.remove('flex');
-            document.getElementById('confirmModal').classList.add('hidden');
-        }
+        function hideConfirmModal() { document.getElementById('confirmModal').classList.remove('flex'); document.getElementById('confirmModal').classList.add('hidden'); }
 
         function setupConfirmListeners() {
-            document.getElementById('confirmYesButton').onclick = () => {
-                hideConfirmModal();
-                if (resolveConfirm) resolveConfirm(true);
-            };
-            document.getElementById('confirmNoButton').onclick = () => {
-                hideConfirmModal();
-                if (resolveConfirm) resolveConfirm(false);
-            };
+            document.getElementById('confirmYesButton').onclick = () => { hideConfirmModal(); if (resolveConfirm) resolveConfirm(true); };
+            document.getElementById('confirmNoButton').onclick = () => { hideConfirmModal(); if (resolveConfirm) resolveConfirm(false); };
         }
-        
-        // --- 3. Logic Tab View (Diperbarui untuk Bottom Bar) ---
-        
+
+        async function logActivity(type, description) {
+            const logEntry = { id: Date.now(), timestamp: new Date().toISOString(), type, description, cashier: state.settings.cashierName || 'N/A' };
+            try { await putItem(STORE_ACTIVITY_LOGS, logEntry); } catch (e) { console.error('Log failed:', e); }
+        }
+
+        // --- PIN MODAL ---
+        function showPinModal(message, callback) {
+            document.getElementById('pinModalMessage').textContent = message; currentPin = ''; updatePinDots();
+            document.getElementById('pinSubmit').disabled = true; document.getElementById('pinSubmit').classList.add('opacity-50', 'cursor-not-allowed');
+            document.getElementById('pinModal').classList.remove('hidden'); document.getElementById('pinModal').classList.add('flex');
+            pinCallback = callback;
+        }
+
+        function hidePinModal() { document.getElementById('pinModal').classList.remove('flex'); document.getElementById('pinModal').classList.add('hidden'); pinCallback = null; currentPin = ''; updatePinDots(); }
+
+        function updatePinDots() {
+            const dots = document.querySelectorAll('.pin-dot');
+            dots.forEach((dot, i) => { dot.classList.toggle('bg-indigo-600', i < currentPin.length); dot.classList.toggle('bg-gray-300', i >= currentPin.length); });
+            const btn = document.getElementById('pinSubmit');
+            if (currentPin.length === 4) { btn.disabled = false; btn.classList.remove('opacity-50', 'cursor-not-allowed'); btn.classList.add('hover:bg-indigo-700'); }
+            else { btn.disabled = true; btn.classList.add('opacity-50', 'cursor-not-allowed'); btn.classList.remove('hover:bg-indigo-700'); }
+        }
+
+        function appendPin(v) { if (currentPin.length < 4) { currentPin += v; updatePinDots(); } }
+        function clearPin() { currentPin = ''; updatePinDots(); }
+        function submitPin() { if (currentPin.length === 4 && pinCallback) { pinCallback(currentPin); hidePinModal(); } }
+
+        document.querySelectorAll('.pin-btn[data-value]').forEach(b => b.addEventListener('click', () => appendPin(b.dataset.value)));
+        document.getElementById('pinClear').addEventListener('click', clearPin);
+        document.getElementById('pinCancel').addEventListener('click', hidePinModal);
+        document.getElementById('pinSubmit').addEventListener('click', submitPin);
+
+        document.addEventListener('keydown', e => {
+            if (document.getElementById('pinModal').classList.contains('flex')) {
+                if (e.key >= '0' && e.key <= '9') appendPin(e.key);
+                else if (e.key === 'Backspace') { currentPin = currentPin.slice(0, -1); updatePinDots(); }
+                else if (e.key === 'Enter' && currentPin.length === 4) submitPin();
+                else if (e.key === 'Escape') hidePinModal();
+            }
+        });
+
+        // --- TABS ---
         function switchTab(tabName) {
             state.currentView = tabName;
-            
-            // Sembunyikan semua view
-            document.getElementById('posView').classList.add('hidden');
-            document.getElementById('historyView').classList.add('hidden');
-            document.getElementById('settingsView').classList.add('hidden');
-
-            // Hapus style aktif dari semua tombol
-            document.querySelectorAll('.tab-button').forEach(button => {
-                button.classList.remove('active', 'border-indigo-600', 'text-indigo-600');
-                button.classList.add('border-transparent', 'text-gray-600');
-            });
-
-            // Tampilkan view yang dipilih
-            const activeView = document.getElementById(tabName);
-            const activeTabButton = document.querySelector(`.tab-button[data-tab="${tabName}"]`);
-            
-            if (activeView) activeView.classList.remove('hidden');
-            
-            // Tambahkan style aktif ke tombol yang dipilih
-            if (activeTabButton) {
-                activeTabButton.classList.add('active', 'border-indigo-600', 'text-indigo-600');
-                activeTabButton.classList.remove('border-transparent', 'text-gray-600');
-            }
-            
-            // Panggil render/load spesifik untuk tab
-            if (tabName === 'historyView') {
-                renderHistoryView();
-            } else if (tabName === 'settingsView') {
-                loadSettingsToForm();
-            }
+            ['posView', 'historyView', 'settingsView'].forEach(v => document.getElementById(v).classList.add('hidden'));
+            document.querySelectorAll('.tab-button').forEach(b => { b.classList.remove('active', 'border-indigo-600', 'text-indigo-600'); b.classList.add('border-transparent', 'text-gray-600'); });
+            const view = document.getElementById(tabName); const btn = document.querySelector(`.tab-button[data-tab="${tabName}"]`);
+            if (view) view.classList.remove('hidden'); if (btn) { btn.classList.add('active', 'border-indigo-600', 'text-indigo-600'); btn.classList.remove('border-transparent', 'text-gray-600'); }
+            if (tabName === 'historyView') renderHistoryView(); else if (tabName === 'settingsView') loadSettingsToForm();
         }
 
-        // --- 4. IndexedDB Core Logic ---
-        
-        /**
-         * Inisialisasi IndexedDB.
-         */
+        // --- INDEXEDDB ---
         function initDB() {
             return new Promise((resolve, reject) => {
-                const request = indexedDB.open(DB_NAME, DB_VERSION);
-
-                request.onupgradeneeded = (event) => {
-                    db = event.target.result;
-                    if (!db.objectStoreNames.contains(STORE_PRODUCTS)) {
-                        db.createObjectStore(STORE_PRODUCTS, { keyPath: 'id', autoIncrement: true });
-                    }
-                    if (!db.objectStoreNames.contains(STORE_TRANSACTIONS)) {
-                        db.createObjectStore(STORE_TRANSACTIONS, { keyPath: 'id', autoIncrement: true });
-                    }
-                    // Tambahkan STORE_SETTINGS jika belum ada
-                    if (!db.objectStoreNames.contains(STORE_SETTINGS)) {
-                        db.createObjectStore(STORE_SETTINGS, { keyPath: 'key' });
-                    }
-                    console.log('Database setup complete.');
+                const req = indexedDB.open(DB_NAME, DB_VERSION);
+                req.onupgradeneeded = e => { db = e.target.result;
+                    [STORE_PRODUCTS, STORE_TRANSACTIONS, STORE_SETTINGS, STORE_ACTIVITY_LOGS].forEach(s => { if (!db.objectStoreNames.contains(s)) db.createObjectStore(s, { keyPath: 'id', autoIncrement: true }); });
                 };
-
-                request.onsuccess = (event) => {
-                    db = event.target.result;
-                    console.log('Database opened successfully.');
-                    resolve(db);
-                };
-
-                request.onerror = (event) => {
-                    console.error('IndexedDB error:', event.target.errorCode);
-                    showMessageModal('Kesalahan Database', 'Gagal membuka database: ' + event.target.error.name);
-                    reject(event.target.error);
-                };
+                req.onsuccess = e => { db = e.target.result; resolve(db); };
+                req.onerror = e => { showMessageModal('DB Error', 'Gagal membuka database.'); reject(e); };
             });
         }
 
-        function getAll(storeName) {
-            return new Promise((resolve, reject) => {
-                const transaction = db.transaction([storeName], 'readonly');
-                const store = transaction.objectStore(storeName);
-                const request = store.getAll();
+        function getAll(s) { return new Promise((r, rej) => { const t = db.transaction([s], 'readonly'); const st = t.objectStore(s); const req = st.getAll(); req.onsuccess = () => r(req.result); req.onerror = () => rej(req.error); }); }
+        function getOne(s, k) { return new Promise((r, rej) => { const t = db.transaction([s], 'readonly'); const st = t.objectStore(s); const req = st.get(k); req.onsuccess = () => r(req.result); req.onerror = () => rej(req.error); }); }
+        function putItem(s, i) { return new Promise((r, rej) => { const t = db.transaction([s], 'readwrite'); const st = t.objectStore(s); const req = st.put(i); req.onsuccess = () => r(req.result); req.onerror = () => rej(req.error); }); }
+        function deleteItem(s, id) { return new Promise((r, rej) => { const t = db.transaction([s], 'readwrite'); const st = t.objectStore(s); const req = st.delete(id); req.onsuccess = () => r(); req.onerror = () => rej(req.error); }); }
+        function clearStore(s) { return new Promise((r, rej) => { const t = db.transaction([s], 'readwrite'); const st = t.objectStore(s); const req = st.clear(); req.onsuccess = () => r(); req.onerror = () => rej(req.error); }); }
 
-                request.onsuccess = () => resolve(request.result);
-                request.onerror = () => reject(request.error);
-            });
-        }
-        
-        function getOne(storeName, key) {
-            return new Promise((resolve, reject) => {
-                const transaction = db.transaction([storeName], 'readonly');
-                const store = transaction.objectStore(storeName);
-                const request = store.get(key);
-
-                request.onsuccess = () => resolve(request.result);
-                request.onerror = () => reject(request.error);
-            });
-        }
-
-        function putItem(storeName, item) {
-            return new Promise((resolve, reject) => {
-                const transaction = db.transaction([storeName], 'readwrite');
-                const store = transaction.objectStore(storeName);
-                const request = store.put(item);
-
-                request.onsuccess = () => resolve(request.result);
-                request.onerror = () => reject(request.error);
-            });
-        }
-
-        function deleteItem(storeName, id) {
-            return new Promise((resolve, reject) => {
-                const transaction = db.transaction([storeName], 'readwrite');
-                const store = transaction.objectStore(storeName);
-                const request = store.delete(id);
-
-                request.onsuccess = () => resolve();
-                request.onerror = () => reject(request.error);
-            });
-        }
-
-        function clearStore(storeName) {
-            return new Promise((resolve, reject) => {
-                const transaction = db.transaction([storeName], 'readwrite');
-                const store = transaction.objectStore(storeName);
-                const request = store.clear();
-
-                request.onsuccess = () => resolve();
-                request.onerror = () => reject(request.error);
-            });
-        }
-
-        // --- 5. Logic Aplikasi (Produk & Keranjang) ---
-
+        // --- APP LOGIC ---
         async function loadProducts() {
             try {
-                const loadedProducts = await getAll(STORE_PRODUCTS);
-                if (loadedProducts.length === 0) {
-                    for (const product of initialProducts) {
-                        await putItem(STORE_PRODUCTS, product);
-                    }
-                    state.products = initialProducts;
-                } else {
-                    state.products = loadedProducts;
-                }
+                const p = await getAll(STORE_PRODUCTS);
+                state.products = p.length === 0 ? (initialProducts.forEach(ip => putItem(STORE_PRODUCTS, ip)), initialProducts) : p;
                 renderProducts();
-            } catch (error) {
-                console.error('Failed to load products:', error);
-                showMessageModal('Gagal Memuat Produk', 'Gagal memuat data produk dari database.');
-            }
+            } catch (e) { console.error(e); }
         }
-        
+
         async function loadSettings() {
             try {
-                const config = await getOne(STORE_SETTINGS, 'receiptConfig');
-                if (config && config.value) {
-                    // Hanya timpa properti yang ada, jaga struktur state default
-                    state.settings = { ...state.settings, ...config.value };
-                    state.taxPercent = state.settings.taxPercent;
-                }
-            } catch (error) {
-                console.error('Failed to load settings:', error);
-            }
+                const cfg = await getOne(STORE_SETTINGS, 'receiptConfig');
+                if (cfg && cfg.value) { state.settings = { ...state.settings, ...cfg.value }; state.taxPercent = state.settings.taxPercent; }
+            } catch (e) { console.error(e); }
         }
 
-        /**
-         * Render daftar produk ke UI (dengan warna pastel).
-         */
         function renderProducts() {
-            const container = document.getElementById('productList');
-            const searchTerm = document.getElementById('productSearch').value.toLowerCase();
-            container.innerHTML = '';
-
-            const filteredProducts = state.products.filter(p =>
-                p.name.toLowerCase().includes(searchTerm)
-            );
-
-            if (filteredProducts.length === 0) {
-                container.innerHTML = `<p class="col-span-full text-center text-gray-500 py-10">Tidak ada produk ditemukan.</p>`;
-                return;
-            }
-
-            filteredProducts.forEach(product => {
-                // Tentukan warna berdasarkan ID produk (agar selalu sama)
-                const colorIndex = product.id % pastelColors.length;
-                const color = pastelColors[colorIndex];
-
+            const cont = document.getElementById('productList'); const search = document.getElementById('productSearch').value.toLowerCase();
+            cont.innerHTML = ''; const filtered = state.products.filter(p => p.name.toLowerCase().includes(search));
+            if (filtered.length === 0) { cont.innerHTML = `<p class="col-span-full text-center text-gray-500 py-10">Tidak ada produk.</p>`; return; }
+            filtered.forEach(p => {
+                const ci = p.id % pastelColors.length; const col = pastelColors[ci];
                 const card = document.createElement('div');
-                // Terapkan kelas warna pastel dan teks yang kontras
-                card.className = `product-card ${color.bg} p-4 rounded-xl shadow-lg cursor-pointer ${product.stock === 0 ? 'opacity-50 grayscale' : ''}`;
-                card.onclick = () => product.stock > 0 ? addToCart(product) : showMessageModal('Stok Habis', `${product.name} saat ini sedang habis.`);
-
-                card.innerHTML = `
-                    <h3 class="text-md font-semibold truncate ${color.text}">${product.name}</h3>
-                    <p class="text-lg font-bold my-1 ${color.text}">${formatRupiah(product.price)}</p>
-                    <p class="text-sm ${color.text}">Stok: 
-                        <span class="${product.stock > 10 ? 'text-green-700' : product.stock > 0 ? 'text-orange-700' : 'text-red-700'} font-medium">
-                            ${product.stock}
-                        </span>
-                    </p>
-                    <button onclick="event.stopPropagation(); editProduct(${product.id})" class="mt-2 text-xs text-blue-700 hover:text-blue-900">Edit</button>
-                `;
-                container.appendChild(card);
+                card.className = `product-card ${col.bg} p-4 rounded-xl shadow-lg cursor-pointer ${p.stock === 0 ? 'opacity-50 grayscale' : ''}`;
+                card.onclick = () => p.stock > 0 ? addToCart(p) : showMessageModal('Stok Habis', `${p.name} habis.`);
+                card.innerHTML = `<h3 class="text-md font-semibold truncate ${col.text}">${p.name}</h3><p class="text-lg font-bold my-1 ${col.text}">${formatRupiah(p.price)}</p><p class="text-sm ${col.text}">Stok: <span class="${p.stock > 10 ? 'text-green-700' : p.stock > 0 ? 'text-orange-700' : 'text-red-700'} font-medium">${p.stock}</span></p><button onclick="event.stopPropagation(); editProduct(${p.id})" class="mt-2 text-xs text-blue-700 hover:text-blue-900">Edit</button>`;
+                cont.appendChild(card);
             });
         }
 
-        function addToCart(product) {
-            const existingItem = state.cart.find(item => item.id === product.id);
-
-            if (existingItem) {
-                if (existingItem.quantity < product.stock) {
-                    existingItem.quantity++;
-                } else {
-                    showMessageModal('Stok Maksimal', `Kuantitas ${product.name} sudah mencapai batas stok (${product.stock}).`);
-                    return;
-                }
-            } else {
-                state.cart.push({
-                    id: product.id,
-                    name: product.name,
-                    price: product.price,
-                    quantity: 1,
-                    stock: product.stock 
-                });
-            }
-
-            renderCart();
-            updateTotals();
+        function addToCart(p) {
+            const ex = state.cart.find(i => i.id === p.id);
+            if (ex) { if (ex.quantity < p.stock) ex.quantity++; else { showMessageModal('Stok Maks', `Stok ${p.name} terbatas.`); return; } }
+            else state.cart.push({ id: p.id, name: p.name, price: p.price, quantity: 1, stock: p.stock });
+            renderCart(); updateTotals();
         }
 
-        function updateCartQuantity(productId, quantity) {
-            const itemIndex = state.cart.findIndex(item => item.id === productId);
-
-            if (itemIndex !== -1) {
-                const productInState = state.products.find(p => p.id === productId);
-                const currentStock = productInState ? productInState.stock : 0;
-                let newQuantity = parseInt(quantity);
-                
-                if (isNaN(newQuantity) || newQuantity < 0) newQuantity = 0;
-
-                if (newQuantity > 0 && newQuantity <= currentStock) {
-                    state.cart[itemIndex].quantity = newQuantity;
-                } else if (newQuantity > currentStock) {
-                    showMessageModal('Stok Maksimal', `Kuantitas melebihi stok yang tersedia (${currentStock}).`);
-                    state.cart[itemIndex].quantity = currentStock; 
-                } else {
-                    state.cart.splice(itemIndex, 1);
-                }
-            }
-            renderCart();
-            updateTotals();
+        function updateCartQuantity(id, qty) {
+            const idx = state.cart.findIndex(i => i.id === id); if (idx === -1) return;
+            const prod = state.products.find(p => p.id === id); const max = prod ? prod.stock : 0;
+            let q = parseInt(qty); if (isNaN(q) || q < 0) q = 0;
+            if (q > max) { showMessageModal('Stok Maks', `Melebihi stok (${max}).`); state.cart[idx].quantity = max; }
+            else if (q > 0) state.cart[idx].quantity = q; else state.cart.splice(idx, 1);
+            renderCart(); updateTotals();
         }
 
         function renderCart() {
-            const container = document.getElementById('cartList');
-            container.innerHTML = '';
-
-            const emptyMessage = document.getElementById('emptyCartMessage'); 
-
-            if (state.cart.length === 0) {
-                if (emptyMessage) emptyMessage.style.display = 'block'; 
-                return;
-            }
-            if (emptyMessage) emptyMessage.style.display = 'none'; 
-
-            state.cart.forEach(item => {
-                const totalItem = item.price * item.quantity;
-                const cartItem = document.createElement('div');
-                cartItem.className = 'flex items-center justify-between p-2 border-b last:border-b-0 bg-gray-50 rounded-md';
-                cartItem.innerHTML = `
-                    <div class="flex-grow min-w-0">
-                        <p class="font-medium text-gray-700 truncate">${item.name}</p>
-                        <p class="text-sm text-gray-500">${formatRupiah(item.price)} x ${item.quantity}</p>
-                    </div>
-                    <div class="flex items-center space-x-2">
-                        <div class="flex border rounded-lg overflow-hidden flex-shrink-0">
-                            <button onclick="updateCartQuantity(${item.id}, ${item.quantity - 1})" class="px-2 py-1 text-sm bg-red-100 hover:bg-red-200">-</button>
-                            <input type="number" value="${item.quantity}" min="1" max="${item.stock}" onchange="updateCartQuantity(${item.id}, parseInt(this.value))" class="w-10 text-center text-sm border-x p-1">
-                            <button onclick="updateCartQuantity(${item.id}, ${item.quantity + 1})" class="px-2 py-1 text-sm bg-green-100 hover:bg-green-200">+</button>
-                        </div>
-                        <span class="font-semibold text-right w-20 sm:w-24 flex-shrink-0">${formatRupiah(totalItem)}</span>
-                    </div>
-                `;
-                container.appendChild(cartItem);
+            const cont = document.getElementById('cartList'); cont.innerHTML = '';
+            const msg = document.getElementById('emptyCartMessage'); if (state.cart.length === 0) { msg.style.display = 'block'; return; } msg.style.display = 'none';
+            state.cart.forEach(i => {
+                const tot = i.price * i.quantity;
+                const el = document.createElement('div');
+                el.className = 'flex items-center justify-between p-2 border-b last:border-b-0 bg-gray-50 rounded-md';
+                el.innerHTML = `<div class="flex-grow min-w-0"><p class="font-medium text-gray-700 truncate">${i.name}</p><p class="text-sm text-gray-500">${formatRupiah(i.price)} x ${i.quantity}</p></div>
+                    <div class="flex items-center space-x-2"><div class="flex border rounded-lg overflow-hidden flex-shrink-0">
+                        <button onclick="updateCartQuantity(${i.id}, ${i.quantity - 1})" class="px-2 py-1 text-sm bg-red-100 hover:bg-red-200">-</button>
+                        <input type="number" value="${i.quantity}" min="1" max="${i.stock}" onchange="updateCartQuantity(${i.id}, parseInt(this.value))" class="w-10 text-center text-sm border-x p-1">
+                        <button onclick="updateCartQuantity(${i.id}, ${i.quantity + 1})" class="px-2 py-1 text-sm bg-green-100 hover:bg-green-200">+</button>
+                    </div><span class="font-semibold text-right w-20 sm:w-24 flex-shrink-0">${formatRupiah(tot)}</span></div>`;
+                cont.appendChild(el);
             });
         }
 
         function updateTotals() {
-            // Dapatkan persentase pajak dari state, default 0
-            state.taxPercent = state.settings.taxPercent || 0; 
-
-            // 1. Hitung Subtotal Harga Jual
-            state.subtotal = state.cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-            
-            // 2. Terapkan Diskon ke Subtotal
+            state.taxPercent = state.settings.taxPercent || 0;
+            state.subtotal = state.cart.reduce((s, i) => s + i.price * i.quantity, 0);
             state.discountPercent = parseInt(document.getElementById('discountPercent').value) || 0;
-            const subtotalAfterDiscount = state.subtotal * (1 - (state.discountPercent / 100));
-            
-            // 3. Hitung DPP dan PPN (Pajak Inklusif)
-            const taxFactor = 1 + (state.taxPercent / 100);
-            
-            // DPP = Subtotal / (1 + Tax Rate)
-            const dppAmount = subtotalAfterDiscount / taxFactor;
-            
-            // Tax = Subtotal - DPP
-            const taxAmount = subtotalAfterDiscount - dppAmount;
-            
-            // Total Akhir = Subtotal (setelah diskon)
-            state.total = Math.round(subtotalAfterDiscount); // Bulatkan total akhir
-
-            // Simpan komponen perhitungan ke state
-            state.dpp = Math.round(dppAmount);
-            state.tax = Math.round(taxAmount);
-
-            // 4. Update UI
+            const afterDisc = state.subtotal * (1 - state.discountPercent / 100);
+            const taxF = 1 + state.taxPercent / 100;
+            const dpp = afterDisc / taxF; const tax = afterDisc - dpp;
+            state.total = Math.round(afterDisc); state.dpp = Math.round(dpp); state.tax = Math.round(tax);
             document.getElementById('subtotal').textContent = formatRupiah(state.subtotal);
             document.getElementById('dppAmount').textContent = formatRupiah(state.dpp);
             document.getElementById('taxAmount').textContent = formatRupiah(state.tax);
             document.getElementById('taxRateDisplay').textContent = state.taxPercent;
             document.getElementById('totalAmount').textContent = formatRupiah(state.total);
-
             calculateChange();
         }
 
         function calculateChange() {
-            const payment = parseInt(document.getElementById('paymentAmount').value) || 0;
-            state.change = payment - state.total;
-
+            const pay = parseInt(document.getElementById('paymentAmount').value) || 0;
+            state.change = pay - state.total;
             document.getElementById('changeAmount').textContent = formatRupiah(state.change);
-
-            const checkoutButton = document.getElementById('checkoutButton');
-            checkoutButton.disabled = state.cart.length === 0 || state.change < 0;
-
-            if (state.change < 0) {
-                document.getElementById('changeAmount').classList.remove('text-green-600');
-                document.getElementById('changeAmount').classList.add('text-red-600');
-            } else {
-                document.getElementById('changeAmount').classList.remove('text-red-600');
-                document.getElementById('changeAmount').classList.add('text-green-600');
-            }
+            const btn = document.getElementById('checkoutButton');
+            btn.disabled = state.cart.length === 0 || state.change < 0;
+            document.getElementById('changeAmount').classList.toggle('text-green-600', state.change >= 0); document.getElementById('changeAmount').classList.toggle('text-red-600', state.change < 0);
         }
-
-        // --- 6. Logic Transaksi dan Checkout ---
 
         async function processTransaction() {
-            if (state.cart.length === 0) {
-                showMessageModal('Keranjang Kosong', 'Tidak ada item di keranjang.', 'text-orange-500');
-                return;
-            }
-
-            if (state.change < 0) {
-                showMessageModal('Pembayaran Kurang', 'Jumlah uang yang dibayarkan kurang dari total belanja.', 'text-red-600');
-                return;
-            }
-
-            try {
-                const transaction = {
-                    id: Date.now(), 
-                    timestamp: new Date().toISOString(),
-                    items: state.cart.map(item => ({
-                        id: item.id,
-                        name: item.name,
-                        price: item.price,
-                        quantity: item.quantity,
-                    })),
-                    subtotal: state.subtotal,
-                    discountPercent: state.discountPercent,
-                    dpp: state.dpp,
-                    tax: state.tax,
-                    taxPercent: state.taxPercent,
-                    total: state.total,
-                    payment: parseInt(document.getElementById('paymentAmount').value) || 0,
-                    change: state.change
-                };
-
-                await putItem(STORE_TRANSACTIONS, transaction);
-
-                for (const cartItem of state.cart) {
-                    const productToUpdate = state.products.find(p => p.id === cartItem.id);
-                    if (productToUpdate) {
-                        productToUpdate.stock -= cartItem.quantity;
-                        await putItem(STORE_PRODUCTS, productToUpdate);
-                    }
-                }
-
-                state.cart = [];
-                state.discountPercent = 0;
-                document.getElementById('discountPercent').value = 0;
-                document.getElementById('paymentAmount').value = '';
-
-                await loadProducts(); 
-                renderCart();
-                updateTotals();
-
-                renderReceiptPreview(transaction);
-
-            } catch (error) {
-                console.error('Transaction failed:', error);
-                showMessageModal('Kesalahan Transaksi', 'Gagal memproses transaksi. Silakan coba lagi.');
-            }
+            if (state.cart.length === 0 || state.change < 0) return;
+            const trans = {
+                id: Date.now(), timestamp: new Date().toISOString(), items: state.cart.map(i => ({ id: i.id, name: i.name, price: i.price, quantity: i.quantity })),
+                subtotal: state.subtotal, discountPercent: state.discountPercent, dpp: state.dpp, tax: state.tax, taxPercent: state.taxPercent,
+                total: state.total, payment: parseInt(document.getElementById('paymentAmount').value) || 0, change: state.change
+            };
+            await putItem(STORE_TRANSACTIONS, trans); await logActivity('TRANSACTION_SALE', `Total: ${formatRupiah(trans.total)}`);
+            for (const ci of state.cart) { const p = state.products.find(pr => pr.id === ci.id); if (p) { p.stock -= ci.quantity; await putItem(STORE_PRODUCTS, p); } }
+            state.cart = []; state.discountPercent = 0; document.getElementById('discountPercent').value = 0; document.getElementById('paymentAmount').value = '';
+            await loadProducts(); renderCart(); updateTotals(); renderReceiptPreview(trans);
         }
 
-        // --- 7. Logic Manajemen Produk (Modal) ---
-
-        function showProductModal(productId = null) {
-            const modal = document.getElementById('productModal');
-            const form = document.getElementById('productForm');
-            const title = document.getElementById('productModalTitle');
-            const deleteButton = document.getElementById('productDeleteButton');
-
-            form.reset();
-            document.getElementById('productId').value = '';
-            deleteButton.classList.add('hidden');
-
-            if (productId) {
-                const product = state.products.find(p => p.id === productId);
-                if (product) {
-                    title.textContent = 'Edit Produk: ' + product.name;
-                    document.getElementById('productId').value = product.id;
-                    document.getElementById('productName').value = product.name;
-                    document.getElementById('productPrice').value = product.price;
-                    document.getElementById('productStock').value = product.stock;
-                    deleteButton.classList.remove('hidden');
-                }
-            } else {
-                title.textContent = 'Tambah Produk Baru';
-            }
-
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
+        function showProductModal(id = null) {
+            const modal = document.getElementById('productModal'); const form = document.getElementById('productForm');
+            form.reset(); document.getElementById('productId').value = ''; document.getElementById('productDeleteButton').classList.add('hidden');
+            if (id) { const p = state.products.find(pr => pr.id === id); if (p) {
+                document.getElementById('productModalTitle').textContent = 'Edit: ' + p.name;
+                document.getElementById('productId').value = p.id; document.getElementById('productName').value = p.name;
+                document.getElementById('productPrice').value = p.price; document.getElementById('productStock').value = p.stock;
+                document.getElementById('productDeleteButton').classList.remove('hidden');
+            }} else document.getElementById('productModalTitle').textContent = 'Tambah Produk Baru';
+            modal.classList.remove('hidden'); modal.classList.add('flex');
         }
 
-        function editProduct(productId) {
-            showProductModal(productId);
-        }
+        function hideProductModal() { document.getElementById('productModal').classList.remove('flex'); document.getElementById('productModal').classList.add('hidden'); }
 
-        function hideProductModal() {
-            document.getElementById('productModal').classList.remove('flex');
-            document.getElementById('productModal').classList.add('hidden');
-        }
-
-        async function saveProduct(event) {
-            event.preventDefault();
+        async function saveProduct(e) {
+            e.preventDefault();
             const id = parseInt(document.getElementById('productId').value) || Date.now();
-            const name = document.getElementById('productName').value.trim();
-            const price = parseInt(document.getElementById('productPrice').value) || 0;
+            const name = document.getElementById('productName').value.trim(); const price = parseInt(document.getElementById('productPrice').value) || 0;
             const stock = parseInt(document.getElementById('productStock').value) || 0;
-
-            if (name === "" || price <= 0 || stock < 0) {
-                showMessageModal('Input Tidak Valid', 'Nama, Harga (>0), dan Stok (>=0) harus diisi dengan benar.');
-                return;
-            }
-
-            const newProduct = { id, name, price, stock };
-
-            try {
-                await putItem(STORE_PRODUCTS, newProduct);
-                hideProductModal();
-                await loadProducts(); 
-                showMessageModal('Berhasil', `Produk ${name} telah disimpan.`, 'text-green-600');
-            } catch (error) {
-                console.error('Failed to save product:', error);
-                showMessageModal('Kesalahan Penyimpanan', 'Gagal menyimpan produk ke database.');
-            }
+            if (!name || price <= 0 || stock < 0) { showMessageModal('Error', 'Isi data dengan benar.'); return; }
+            await putItem(STORE_PRODUCTS, { id, name, price, stock }); hideProductModal(); await loadProducts();
+            showMessageModal('Sukses', `${name} disimpan.`, 'text-green-600');
+            await logActivity('PRODUCT_MANAGE', `Produk '${name}' ${document.getElementById('productId').value ? 'diperbarui' : 'ditambahkan'}.`);
         }
 
         async function deleteProduct() {
-            const id = parseInt(document.getElementById('productId').value);
-            const name = document.getElementById('productName').value;
-
-            if (!id) return;
-
-            const confirmed = await showConfirmModal('Hapus Produk', `Apakah Anda yakin ingin menghapus produk "${name}"? Tindakan ini tidak dapat dibatalkan.`);
-            if (!confirmed) return;
-
-            try {
-                await deleteItem(STORE_PRODUCTS, id);
-                hideProductModal();
-                await loadProducts(); 
-                showMessageModal('Berhasil Dihapus', `Produk ${name} telah dihapus.`, 'text-green-600');
-            } catch (error) {
-                console.error('Failed to delete product:', error);
-                showMessageModal('Kesalahan Penghapusan', 'Gagal menghapus produk dari database.');
-            }
+            const id = parseInt(document.getElementById('productId').value); const name = document.getElementById('productName').value;
+            if (!id) return; const ok = await showConfirmModal('Hapus?', `Hapus "${name}"?`); if (!ok) return;
+            await deleteItem(STORE_PRODUCTS, id); hideProductModal(); await loadProducts(); showMessageModal('Dihapus', `${name} dihapus.`, 'text-green-600');
+            await logActivity('PRODUCT_MANAGE', `Produk '${name}' (ID: ${id}) dihapus.`);
         }
 
-        // --- 8. Logic Riwayat Transaksi (Tab) (Diperbarui dengan Filter) ---
+        function clearHistoryFilters() { ['historySearch', 'startDateFilter', 'endDateFilter'].forEach(id => document.getElementById(id).value = ''); renderHistoryView(); }
 
-        /**
-         * Membersihkan semua filter riwayat transaksi dan me-render ulang.
-         */
-        function clearHistoryFilters() {
-            document.getElementById('historySearch').value = '';
-            document.getElementById('startDateFilter').value = '';
-            document.getElementById('endDateFilter').value = '';
-            renderHistoryView();
+        async function confirmDeleteTransaction(id) {
+            const ok = await showConfirmModal('Hapus Transaksi', `Hapus #${id}?`); if (!ok) return;
+            showPinModal(`Masukkan PIN untuk hapus #${id}:`, async pin => {
+                if (pin !== ADMIN_PIN) { showMessageModal('PIN Salah', 'Dibatalkan.', 'text-red-600'); return; }
+                const t = await getOne(STORE_TRANSACTIONS, id);
+                if (t && t.items) { for (const i of t.items) { const p = state.products.find(pr => pr.id === i.id); if (p) { p.stock += i.quantity; await putItem(STORE_PRODUCTS, p); } } await loadProducts(); }
+                await deleteItem(STORE_TRANSACTIONS, id); await logActivity('TRANSACTION_DELETE', `Transaksi #${id} dihapus.`);
+                renderHistoryView(); showMessageModal('Dihapus', `Transaksi #${id} dihapus.`, 'text-green-600');
+            });
         }
 
         async function renderHistoryView() {
-            const container = document.getElementById('historyList');
-            container.innerHTML = `<p class="text-center text-gray-500" id="loadingHistory">Memuat riwayat...</p>`;
-
+            const cont = document.getElementById('historyList'); cont.innerHTML = `<p class="text-center text-gray-500" id="loadingHistory">Memuat...</p>`;
             try {
-                let transactions = await getAll(STORE_TRANSACTIONS);
-                
-                // --- FILTERING LOGIC START ---
-                const searchTerm = document.getElementById('historySearch').value.toLowerCase();
-                const startDateStr = document.getElementById('startDateFilter').value;
-                const endDateStr = document.getElementById('endDateFilter').value;
-
-                // Apply filters
-                transactions = transactions.filter(t => {
-                    // Search Term Filter (ID or Product Name)
-                    const matchesSearch = searchTerm === '' ||
-                                        t.id.toString().includes(searchTerm) ||
-                                        t.items.some(item => item.name.toLowerCase().includes(searchTerm));
-
-                    // Date Range Filter
-                    const transactionDate = new Date(t.timestamp);
-                    let matchesDate = true;
-
-                    if (startDateStr) {
-                        const startDate = new Date(startDateStr);
-                        // Set time to start of day for comparison
-                        startDate.setHours(0, 0, 0, 0); 
-                        if (transactionDate < startDate) {
-                            matchesDate = false;
-                        }
-                    }
-
-                    if (endDateStr) {
-                        const endDate = new Date(endDateStr);
-                        // Set time to end of day for comparison
-                        endDate.setHours(23, 59, 59, 999); 
-                        if (transactionDate > endDate) {
-                            matchesDate = false;
-                        }
-                    }
-
-                    return matchesSearch && matchesDate;
+                let txs = await getAll(STORE_TRANSACTIONS);
+                const s = document.getElementById('historySearch').value.toLowerCase();
+                const start = document.getElementById('startDateFilter').value; const end = document.getElementById('endDateFilter').value;
+                txs = txs.filter(t => {
+                    const matchS = !s || t.id.toString().includes(s) || t.items.some(i => i.name.toLowerCase().includes(s));
+                    let matchD = true; const td = new Date(t.timestamp);
+                    if (start) { const sd = new Date(start); sd.setHours(0,0,0,0); if (td < sd) matchD = false; }
+                    if (end) { const ed = new Date(end); ed.setHours(23,59,59,999); if (td > ed) matchD = false; }
+                    return matchS && matchD;
                 });
-                // --- FILTERING LOGIC END ---
-
-                container.innerHTML = ''; 
-
-                if (transactions.length === 0) {
-                    container.innerHTML = `<p class="text-center text-gray-500 py-10">Tidak ada riwayat transaksi yang cocok dengan filter.</p>`;
-                    return;
-                }
-
-                transactions.sort((a, b) => b.id - a.id);
-
-                transactions.forEach(t => {
-                    // Pastikan properti pajak ada, jika tidak, gunakan default 0
-                    t.dpp = t.dpp || 0;
-                    t.tax = t.tax || 0;
-                    t.taxPercent = t.taxPercent || 0;
-                    
-                    const date = new Date(t.timestamp).toLocaleString('id-ID', {
-                        day: '2-digit', month: 'short', year: 'numeric',
-                        hour: '2-digit', minute: '2-digit'
-                    });
-                    const itemsList = t.items.map(item => `
-                        <li class="text-sm text-gray-600">${item.name} (${item.quantity}x) - ${formatRupiah(item.price * item.quantity)}</li>
-                    `).join('');
-                    
-                    // Hitung Diskon Amount
-                    const subtotalAfterDiscount = t.subtotal * (1 - (t.discountPercent / 100));
-                    const discountAmount = t.subtotal - subtotalAfterDiscount;
-
-
-                    // Buat baris pajak kondisional
-                    let taxLinesHistory = '';
-                    if (t.taxPercent > 0) {
-                        taxLinesHistory = `
-                            <p class="text-xs text-gray-600 pt-1">DPP: <span class="float-right">${formatRupiah(t.dpp)}</span></p>
-                            <p class="text-xs text-gray-600">PPN (${t.taxPercent}%): <span class="float-right">${formatRupiah(t.tax)}</span></p>
-                        `;
-                    }
-
-                    // Gunakan JSON.stringify untuk melewati objek transaksi yang kompleks ke fungsi onclick
-                    const transactionJson = JSON.stringify(t).replace(/"/g, '&quot;'); 
-
-                    const historyItem = document.createElement('div');
-                    historyItem.className = 'border p-4 rounded-lg bg-white shadow-sm hover:shadow-md transition duration-150';
-                    historyItem.innerHTML = `
-                        <div class="flex justify-between items-center border-b pb-2 mb-2 flex-wrap">
-                            <h4 class="font-bold text-lg text-indigo-700">Transaksi #${t.id}</h4>
-                            <span class="text-sm text-gray-500">${date}</span>
-                            <button onclick="renderReceiptPreview(${transactionJson})" class="text-sm text-blue-500 hover:text-blue-700 font-medium">Pratinjau Struk</button>
-                        </div>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div class="col-span-2">
-                                <p class="font-medium text-gray-700">Detail Item:</p>
-                                <ul class="list-disc pl-5 space-y-1">${itemsList}</ul>
-                            </div>
-                            <div class="space-y-1 text-sm md:text-base">
-                                <p>Subtotal (Harga Jual): <span class="float-right">${formatRupiah(t.subtotal)}</span></p>
-                                <p>Diskon (${t.discountPercent}%): <span class="float-right text-red-500">-${formatRupiah(Math.round(discountAmount))}</span></p>
-                                ${taxLinesHistory} 
-                                <p class="font-bold text-xl border-t pt-2">Total: <span class="float-right text-green-700">${formatRupiah(t.total)}</span></p>
-                                <p>Dibayar: <span class="float-right">${formatRupiah(t.payment)}</span></p>
-                                <p class="font-bold">Kembalian: <span class="float-right">${formatRupiah(t.change)}</span></p>
-                            </div>
-                        </div>
-                    `;
-                    container.appendChild(historyItem);
+                cont.innerHTML = ''; if (txs.length === 0) { cont.innerHTML = `<p class="text-center text-gray-500 py-10">Tidak ada data.</p>`; return; }
+                txs.sort((a,b) => b.id - a.id);
+                txs.forEach(t => {
+                    t.dpp = t.dpp || 0; t.tax = t.tax || 0; t.taxPercent = t.taxPercent || 0;
+                    const date = new Date(t.timestamp).toLocaleString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+                    const items = t.items.map(i => `<li class="text-sm text-gray-600">${i.name} (${i.quantity}x) - ${formatRupiah(i.price * i.quantity)}</li>`).join('');
+                    const discAmt = t.subtotal - (t.subtotal * (1 - t.discountPercent/100));
+                    let taxLines = ''; if (t.taxPercent > 0) taxLines = `<p class="text-xs text-gray-600 pt-1">DPP: <span class="float-right">${formatRupiah(t.dpp)}</span></p><p class="text-xs text-gray-600">PPN (${t.taxPercent}%): <span class="float-right">${formatRupiah(t.tax)}</span></p>`;
+                    const json = JSON.stringify(t).replace(/"/g, '&quot;');
+                    const el = document.createElement('div');
+                    el.className = 'border p-4 rounded-lg bg-white shadow-sm hover:shadow-md transition duration-150';
+                    el.innerHTML = `<div class="flex justify-between items-center border-b pb-2 mb-2 flex-wrap"><h4 class="font-bold text-lg text-indigo-700">Transaksi #${t.id}</h4>
+                        <div class="flex items-center space-x-3"><button onclick="renderReceiptPreview(${json})" class="text-sm text-blue-500 hover:text-blue-700 font-medium">Pratinjau</button>
+                        <button onclick="confirmDeleteTransaction(${t.id})" class="text-sm text-red-500 hover:text-red-700 font-medium">Hapus</button></div></div>
+                        <div class="text-sm text-gray-500 mb-2">Tanggal: ${date}</div>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4"><div class="col-span-2"><p class="font-medium text-gray-700">Item:</p><ul class="list-disc pl-5 space-y-1">${items}</ul></div>
+                        <div class="space-y-1 text-sm md:text-base"><p>Subtotal: <span class="float-right">${formatRupiah(t.subtotal)}</span></p>
+                        <p>Diskon (${t.discountPercent}%): <span class="float-right text-red-500">-${formatRupiah(Math.round(discAmt))}</span></p>${taxLines}
+                        <p class="font-bold text-xl border-t pt-2">Total: <span class="float-right text-green-700">${formatRupiah(t.total)}</span></p>
+                        <p>Bayar: <span class="float-right">${formatRupiah(t.payment)}</span></p><p class="font-bold">Kembalian: <span class="float-right">${formatRupiah(t.change)}</span></p></div></div>`;
+                    cont.appendChild(el);
                 });
-
-            } catch (error) {
-                console.error('Failed to load history:', error);
-                container.innerHTML = `<p class="text-center text-red-500 py-10">Gagal memuat riwayat transaksi.</p>`;
-            }
-        }
-        
-        // --- 9. Logic Pratinjau Struk & Cetak (Diperbarui untuk Nama Kasir Kondisional) ---
-
-        function renderReceiptPreview(transaction) {
-            const date = new Date(transaction.timestamp).toLocaleString('id-ID', {
-                year: 'numeric', month: '2-digit', day: '2-digit',
-                hour: '2-digit', minute: '2-digit', second: '2-digit'
-            });
-
-            const header = state.settings.receiptHeader.split('\n').map(line => `<div style="text-align: center;">${line}</div>`).join('');
-            const footer = state.settings.receiptFooter.split('\n').map(line => `<div style="text-align: center;">${line}</div>`).join('');
-            
-            let itemsHtml = '';
-            transaction.items.forEach(item => {
-                const itemTotal = item.price * item.quantity;
-                itemsHtml += `<div style="display: flex; justify-content: space-between;"><span>${item.name}</span><span>${formatRupiah(itemTotal)}</span></div>`;
-                // MODIFIKASI: text-align: left dan padding-left untuk indentasi
-                itemsHtml += `<div style="text-align: left; margin-bottom: 2px; padding-left: 10px;">${item.quantity} x ${formatRupiah(item.price)}</div>`;
-            });
-            
-            // Hitung Diskon Amount
-            const discountAmount = transaction.subtotal - (transaction.dpp + transaction.tax);
-
-            // Fitur Baru: Buat baris Nama Kasir (Kondisional)
-            const cashierNameLine = state.settings.cashierName && state.settings.cashierName.trim() !== ''
-                                    ? `<div>Kasir: ${state.settings.cashierName}</div>` 
-                                    : ''; 
-
-            // Buat baris pajak kondisional
-            let taxLinesHtml = '';
-            // Tampilkan detail pajak hanya jika persentase pajak lebih dari 0
-            if (transaction.taxPercent > 0) {
-                taxLinesHtml = `
-                    <div style="display: flex; justify-content: space-between; margin-top: 5px;"><span>DPP:</span><span>${formatRupiah(transaction.dpp)}</span></div>
-                    <div style="display: flex; justify-content: space-between;"><span>PPN (${transaction.taxPercent}%):</span><span>${formatRupiah(transaction.tax)}</span></div>
-                `;
-            }
-
-            const htmlContent = `
-                <div class="receipt-print-area">
-                    <div style="margin-bottom: 10px;">
-                        ${header}
-                    </div>
-                    <div style="border-top: 1px dashed #000; padding-top: 5px; margin-bottom: 5px;">
-                        ${cashierNameLine}
-                        <div>Tanggal: ${date}</div>
-                        <div>ID Transaksi: ${transaction.id}</div>
-                    </div>
-                    
-                    <div style="border-top: 1px dashed #000; padding: 5px 0; margin-bottom: 5px;">
-                        ${itemsHtml}
-                    </div>
-
-                    <div style="border-top: 1px dashed #000; padding-top: 5px; margin-bottom: 5px;">
-                        <div style="display: flex; justify-content: space-between;"><span>Subtotal (Harga Jual):</span><span>${formatRupiah(transaction.subtotal)}</span></div>
-                        <div style="display: flex; justify-content: space-between;"><span>Diskon (${transaction.discountPercent}%):</span><span>-${formatRupiah(Math.round(discountAmount))}</span></div>
-                        ${taxLinesHtml} 
-                        <div style="display: flex; justify-content: space-between; font-weight: bold; border-top: 1px solid #000; padding-top: 3px;"><span>TOTAL:</span><span>${formatRupiah(transaction.total)}</span></div>
-                    </div>
-                    
-                    <div style="margin-bottom: 10px;">
-                        <div style="display: flex; justify-content: space-between;"><span>Bayar:</span><span>${formatRupiah(transaction.payment)}</span></div>
-                        <div style="display: flex; justify-content: space-between; font-weight: bold;"><span>Kembalian:</span><span>${formatRupiah(transaction.change)}</span></div>
-                    </div>
-
-                    <div style="border-top: 1px dashed #000; padding-top: 10px;">
-                        ${footer}
-                    </div>
-                </div>
-            `;
-            
-            document.getElementById('receiptPrintArea').innerHTML = htmlContent;
-            document.getElementById('receiptModal').classList.remove('hidden');
-            document.getElementById('receiptModal').classList.add('flex');
-            
-            showMessageModal('Transaksi Berhasil!', 
-                `Total: ${formatRupiah(transaction.total)}. Lihat struk di pratinjau.`, 
-                'text-green-600'
-            );
+            } catch (e) { cont.innerHTML = `<p class="text-center text-red-500 py-10">Gagal memuat.</p>`; }
         }
 
-        function hideReceiptModal() {
-            document.getElementById('receiptModal').classList.remove('flex');
-            document.getElementById('receiptModal').classList.add('hidden');
-            hideMessageModal(); 
+        function renderReceiptPreview(t) {
+            const date = new Date(t.timestamp).toLocaleString('id-ID', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            const header = state.settings.receiptHeader.split('\n').map(l => `<div style="text-align:center;">${l}</div>`).join('');
+            const footer = state.settings.receiptFooter.split('\n').map(l => `<div style="text-align:center;">${l}</div>`).join('');
+            let items = ''; t.items.forEach(i => { const tot = i.price * i.quantity; items += `<div style="display:flex;justify-content:space-between;"><span>${i.name}</span><span>${formatRupiah(tot)}</span></div><div style="text-align:left;margin-bottom:2px;padding-left:10px;">${i.quantity} x ${formatRupiah(i.price)}</div>`; });
+            const discAmt = t.subtotal - (t.dpp + t.tax);
+            const cashier = state.settings.cashierName ? `<div>Kasir: ${state.settings.cashierName}</div>` : '';
+            let taxLines = ''; if (t.taxPercent > 0) taxLines = `<div style="display:flex;justify-content:space-between;margin-top:5px;"><span>DPP:</span><span>${formatRupiah(t.dpp)}</span></div><div style="display:flex;justify-content:space-between;"><span>PPN (${t.taxPercent}%):</span><span>${formatRupiah(t.tax)}</span></div>`;
+            document.getElementById('receiptPrintArea').innerHTML = `<div class="receipt-print-area"><div style="margin-bottom:10px;">${header}</div>
+                <div style="border-top:1px dashed #000;padding-top:5px;margin-bottom:5px;">${cashier}<div>Tanggal: ${date}</div><div>ID: ${t.id}</div></div>
+                <div style="border-top:1px dashed #000;padding:5px 0;margin-bottom:5px;">${items}</div>
+                <div style="border-top:1px dashed #000;padding-top:5px;margin-bottom:5px;">
+                    <div style="display:flex;justify-content:space-between;"><span>Subtotal:</span><span>${formatRupiah(t.subtotal)}</span></div>
+                    <div style="display:flex;justify-content:space-between;"><span>Diskon (${t.discountPercent}%):</span><span>-${formatRupiah(Math.round(discAmt))}</span></div>${taxLines}
+                    <div style="display:flex;justify-content:space-between;font-weight:bold;border-top:1px solid #000;padding-top:3px;"><span>TOTAL:</span><span>${formatRupiah(t.total)}</span></div>
+                </div><div style="margin-bottom:10px;"><div style="display:flex;justify-content:space-between;"><span>Bayar:</span><span>${formatRupiah(t.payment)}</span></div>
+                <div style="display:flex;justify-content:space-between;font-weight:bold;"><span>Kembalian:</span><span>${formatRupiah(t.change)}</span></div></div>
+                <div style="border-top:1px dashed #000;padding-top:10px;">${footer}</div></div>`;
+            document.getElementById('receiptModal').classList.remove('hidden'); document.getElementById('receiptModal').classList.add('flex');
+            showMessageModal('Sukses!', `Total: ${formatRupiah(t.total)}. Lihat struk.`, 'text-green-600');
         }
+
+        function hideReceiptModal() { document.getElementById('receiptModal').classList.remove('flex'); document.getElementById('receiptModal').classList.add('hidden'); hideMessageModal(); }
 
         function printReceipt() {
-            const printContent = document.getElementById('receiptPrintArea').innerHTML;
-            const printWindow = window.open('', '', 'width=400,height=600');
-            
-            printWindow.document.write(`
-                <html>
-                <head>
-                    <title>Cetak Struk</title>
-                    <style>
-                        @media print {
-                            body { margin: 0; padding: 0; }
-                            .receipt-print-area {
-                                font-family: monospace;
-                                font-size: 11px;
-                                width: 80mm;
-                                margin: 0 auto;
-                                padding: 10px;
-                            }
-                        }
-                    </style>
-                </head>
-                <body>
-                    ${printContent}
-                    <script>
-                        window.onload = function() {
-                            window.print();
-                            window.onafterprint = function() {
-                                window.close();
-                            };
-                        };
-                    <\/script>
-                </body>
-                </html>
-            `);
-            printWindow.document.close();
+            const content = document.getElementById('receiptPrintArea').innerHTML;
+            const win = window.open('', '', 'width=400,height=600');
+            win.document.write(`<html><head><title>Struk</title><style>@media print { body { margin:0; } .receipt-print-area { font-family:monospace; font-size:11px; width:80mm; margin:auto; padding:10px; } }</style></head><body>${content}<script>window.onload=()=>{window.print();window.onafterprint=()=>{window.close();}};<\/script></body></html>`);
+            win.document.close();
         }
-
-
-        // --- 10. Logic Pengaturan (Tab) (Diperbarui untuk Nama Kasir) ---
 
         function loadSettingsToForm() {
             document.getElementById('receiptHeader').value = state.settings.receiptHeader;
             document.getElementById('receiptFooter').value = state.settings.receiptFooter;
             document.getElementById('taxPercentInput').value = state.settings.taxPercent || 0;
-            document.getElementById('cashierNameInput').value = state.settings.cashierName || ''; // Fitur Baru
+            document.getElementById('cashierNameInput').value = state.settings.cashierName || '';
         }
 
         async function saveSettings() {
-            const header = document.getElementById('receiptHeader').value.trim();
-            const footer = document.getElementById('receiptFooter').value.trim();
-            const taxPercent = parseInt(document.getElementById('taxPercentInput').value) || 0;
-            const cashierName = document.getElementById('cashierNameInput').value.trim(); // Fitur Baru
-
-            state.settings.receiptHeader = header;
-            state.settings.receiptFooter = footer;
-            state.settings.taxPercent = taxPercent;
-            state.settings.cashierName = cashierName; // Fitur Baru
-            
-            const settingsObject = { key: 'receiptConfig', value: state.settings };
-
-            try {
-                await putItem(STORE_SETTINGS, settingsObject);
-                // Update state global taxPercent
-                state.taxPercent = taxPercent; 
-                // Render ulang total untuk menerapkan perubahan pajak
-                updateTotals(); 
-                showMessageModal('Berhasil', 'Pengaturan struk, pajak, dan nama kasir telah disimpan.', 'text-green-600');
-            } catch (error) {
-                console.error('Failed to save settings:', error);
-                showMessageModal('Kesalahan', 'Gagal menyimpan pengaturan.', 'text-red-600');
-            }
+            state.settings.receiptHeader = document.getElementById('receiptHeader').value.trim();
+            state.settings.receiptFooter = document.getElementById('receiptFooter').value.trim();
+            state.settings.taxPercent = parseInt(document.getElementById('taxPercentInput').value) || 0;
+            state.settings.cashierName = document.getElementById('cashierNameInput').value.trim();
+            await putItem(STORE_SETTINGS, { key: 'receiptConfig', value: state.settings });
+            state.taxPercent = state.settings.taxPercent; updateTotals();
+            showMessageModal('Tersimpan', 'Pengaturan disimpan.', 'text-green-600');
+            await logActivity('SETTINGS_SAVE', `Pajak ${state.taxPercent}% disimpan.`);
         }
-        
-        // --- 11. Logic Export/Import Data ---
+
+        async function exportActivityLogs() {
+            try {
+                const logs = await getAll(STORE_ACTIVITY_LOGS);
+                const obj = { dataType: "ActivityLogs", timestamp: new Date().toISOString(), logs };
+                const blob = new Blob([JSON.stringify(obj, null, 2)], { type: "application/json" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a'); a.href = url; a.download = `pos_logs_${new Date().toISOString().slice(0,10)}.json`;
+                a.click(); URL.revokeObjectURL(url);
+                showMessageModal('Sukses', 'Log diekspor.', 'text-green-600');
+            } catch (e) { showMessageModal('Error', 'Gagal ekspor log.', 'text-red-600'); }
+        }
+
+        async function showClearLogsConfirm() {
+            const ok = await showConfirmModal('Hapus Log', 'Hapus SEMUA log?'); if (!ok) return;
+            showPinModal('Masukkan PIN untuk hapus log:', async pin => {
+                if (pin !== ADMIN_PIN) { showMessageModal('PIN Salah', 'Dibatalkan.', 'text-red-600'); return; }
+                await clearStore(STORE_ACTIVITY_LOGS); showMessageModal('Dihapus', 'Semua log dihapus.', 'text-green-600');
+            });
+        }
 
         async function exportData() {
             try {
-                const products = await getAll(STORE_PRODUCTS);
-                const transactions = await getAll(STORE_TRANSACTIONS);
-                const settings = await getAll(STORE_SETTINGS);
-
-                const exportObject = {
-                    version: DB_VERSION,
-                    timestamp: new Date().toISOString(),
-                    products: products,
-                    transactions: transactions,
-                    settings: settings
-                };
-
-                const dataStr = JSON.stringify(exportObject, null, 2);
-                const blob = new Blob([dataStr], { type: "application/json" });
+                const [p, t, s] = await Promise.all([getAll(STORE_PRODUCTS), getAll(STORE_TRANSACTIONS), getAll(STORE_SETTINGS)]);
+                const obj = { version: DB_VERSION, timestamp: new Date().toISOString(), products: p, transactions: t, settings: s };
+                const blob = new Blob([JSON.stringify(obj, null, 2)], { type: "application/json" });
                 const url = URL.createObjectURL(blob);
-                
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = `pos_data_export_${new Date().toISOString().slice(0, 10)}.json`;
-                
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                
-                showMessageModal('Ekspor Berhasil', 'Data berhasil diekspor sebagai file JSON.', 'text-green-600');
-
-            } catch (error) {
-                console.error('Export failed:', error);
-                showMessageModal('Kesalahan Ekspor', 'Gagal mengekspor data.', 'text-red-600');
-            }
+                const a = document.createElement('a'); a.href = url; a.download = `pos_export_${new Date().toISOString().slice(0,10)}.json`;
+                a.click(); URL.revokeObjectURL(url);
+                showMessageModal('Sukses', 'Data diekspor.', 'text-green-600');
+            } catch (e) { showMessageModal('Error', 'Gagal ekspor.', 'text-red-600'); }
         }
-        
-        async function importData(event) {
-            const file = event.target.files[0];
-            if (!file) return;
 
-            const confirmed = await showConfirmModal('Konfirmasi Impor', 'Data yang ada (Produk, Transaksi, Pengaturan) akan DITIMPA. Apakah Anda yakin ingin melanjutkan?');
-            if (!confirmed) return;
-
-            const reader = new FileReader();
-            reader.onload = async (e) => {
+        async function importData(e) {
+            const file = e.target.files[0]; if (!file) return;
+            const ok = await showConfirmModal('Impor', 'Data akan DITIMPA. Lanjut?'); if (!ok) return;
+            const reader = new FileReader(); reader.onload = async ev => {
                 try {
-                    const importedData = JSON.parse(e.target.result);
-
-                    if (!importedData.products || !importedData.transactions || !importedData.settings) {
-                        throw new Error("File JSON tidak memiliki struktur yang benar (membutuhkan products, transactions, settings).");
-                    }
-                    
-                    await clearStore(STORE_PRODUCTS);
-                    await clearStore(STORE_TRANSACTIONS);
-                    await clearStore(STORE_SETTINGS);
-
-                    const stores = [
-                        { name: STORE_PRODUCTS, data: importedData.products },
-                        { name: STORE_TRANSACTIONS, data: importedData.transactions },
-                        { name: STORE_SETTINGS, data: importedData.settings }
-                    ];
-
-                    for (const store of stores) {
-                        for (const item of store.data) {
-                            await putItem(store.name, item);
-                        }
-                    }
-                    
-                    await loadSettings();
-                    await loadProducts();
-                    renderCart();
-                    updateTotals();
-                    
-                    switchTab('posView'); 
-
-                    showMessageModal('Impor Berhasil', 'Data berhasil diimpor dan aplikasi dimuat ulang.', 'text-green-600');
-
-                } catch (error) {
-                    console.error('Import failed:', error);
-                    showMessageModal('Kesalahan Impor', 'Gagal memproses file impor: ' + error.message, 'text-red-600');
-                }
-            };
-            reader.readAsText(file);
+                    const data = JSON.parse(ev.target.result);
+                    if (!data.products || !data.transactions || !data.settings) throw new Error("Format tidak valid.");
+                    await Promise.all([clearStore(STORE_PRODUCTS), clearStore(STORE_TRANSACTIONS), clearStore(STORE_SETTINGS), clearStore(STORE_ACTIVITY_LOGS)]);
+                    await Promise.all([
+                        ...data.products.map(i => putItem(STORE_PRODUCTS, i)),
+                        ...data.transactions.map(i => putItem(STORE_TRANSACTIONS, i)),
+                        ...data.settings.map(i => putItem(STORE_SETTINGS, i))
+                    ]);
+                    if (data.activityLogs) await Promise.all(data.activityLogs.map(l => putItem(STORE_ACTIVITY_LOGS, l)));
+                    await loadSettings(); await loadProducts(); renderCart(); updateTotals(); switchTab('posView');
+                    showMessageModal('Sukses', 'Data diimpor.', 'text-green-600');
+                } catch (err) { showMessageModal('Error', 'Gagal impor: ' + err.message, 'text-red-600'); }
+            }; reader.readAsText(file);
         }
 
-
-        // --- 12. Inisialisasi Aplikasi ---
-
+        // --- INIT ---
         window.onload = async () => {
-            if (!window.indexedDB) {
-                showMessageModal('Error Fatal', 'Browser Anda tidak mendukung IndexedDB. Aplikasi tidak dapat berjalan.', 'text-red-700');
-                return;
-            }
-
-            setupConfirmListeners();
-            await initDB();
-            
-            await loadSettings();
-            await loadProducts();
-            
-            renderCart();
-            updateTotals();
-            switchTab('posView'); 
-
-            document.getElementById('discountPercent').addEventListener('input', updateTotals);
-            document.getElementById('paymentAmount').addEventListener('input', calculateChange);
-            document.getElementById('taxPercentInput').addEventListener('input', () => {
-                // Update state settings saat input diubah di settings view
-                state.settings.taxPercent = parseInt(document.getElementById('taxPercentInput').value) || 0;
-                // Simpan segera atau setidaknya refresh total
-                updateTotals(); 
-            });
-            document.getElementById('cashierNameInput').addEventListener('input', () => {
-                // Update state settings saat input diubah di settings view
-                state.settings.cashierName = document.getElementById('cashierNameInput').value.trim();
-            });
+            if (!window.indexedDB) { showMessageModal('Error', 'Browser tidak mendukung IndexedDB.'); return; }
+            setupConfirmListeners(); await initDB(); await loadSettings(); await loadProducts();
+            renderCart(); updateTotals(); switchTab('posView');
+            ['discountPercent', 'paymentAmount'].forEach(id => document.getElementById(id).addEventListener('input', id === 'discountPercent' ? updateTotals : calculateChange));
+            document.getElementById('taxPercentInput').addEventListener('input', () => { state.settings.taxPercent = parseInt(document.getElementById('taxPercentInput').value) || 0; updateTotals(); });
+            document.getElementById('cashierNameInput').addEventListener('input', () => { state.settings.cashierName = document.getElementById('cashierNameInput').value.trim(); });
         };
     </script>
 </body>
