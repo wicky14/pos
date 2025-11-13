@@ -5,54 +5,75 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistem POS</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; }
-        /* Mengatur agar konten app mengambil sisa tinggi layar */
         #app { min-height: 100vh; display: flex; flex-direction: column; }
-        /* Diberi padding-bottom agar konten tidak tertutup bottom bar */
-        #mainContent { flex-grow: 1; overflow-y: hidden; padding-bottom: 4rem; /* Sesuaikan dengan tinggi nav bar */ } 
+        
+        /* PENTING: Padding bawah disesuaikan agar konten tidak tertutup bottom bar */
+        /* DIUBAH: Disesuaikan untuk Floating Bar yang lebih tebal dan ada margin bawah (sekitar 96px) */
+        #mainContent { 
+            flex-grow: 1; 
+            overflow-y: hidden; 
+            padding-bottom: 6rem; /* 96px */
+        } 
 
-        /* Style untuk daftar keranjang - DITINGKATKAN */
-        #cartList {
-            max-height: 400px; /* Nilai yang lebih tinggi untuk tampilan mobile/desktop kecil */
-            overflow-y: auto;
-        }
-        /* Override max-height untuk layar desktop yang lebih besar */
-        @media (min-width: 768px) {
-            #cartList {
-                max-height: 600px; /* Nilai yang sangat tinggi untuk ruang kerja yang lebih baik */
-            }
-        }
+        #cartList { max-height: 400px; overflow-y: auto; }
+        @media (min-width: 768px) { #cartList { max-height: 600px; } }
 
-        /* Style untuk kartu produk dan transisi hover */
         .product-card {
             transition: transform 0.2s ease, box-shadow 0.2s ease;
             @apply hover:scale-[1.02] hover:shadow-xl;
         }
+        .input-rupiah { text-align: right; }
+        .receipt-print-area { font-family: 'Courier New', monospace; font-size: 10px; width: 200px; margin: 0 auto; padding: 5px; line-height: 1.1; }
+        
+        /* * MODIFIKASI UTAMA UNTUK BOTTOM BAR MODERN * */
+        .tab-button-modern {
+            /* Menggunakan h-full, padding vertikal lebih fokus ke konten */
+            @apply flex flex-col items-center justify-center p-1 text-gray-500 transition-all duration-300 flex-grow h-full relative; 
+            border-radius: 12px; 
+            margin: 0; 
+            min-width: 60px;
+        }
+        
+        /* === MODIFIKASI UNTUK KONTRAST AKTIF DIMULAI DI SINI === */
+        
+        .tab-content {
+            /* Wadah untuk icon dan label agar bisa menjadi bentuk kapsul */
+            @apply flex items-center justify-center p-2 md:px-4 md:py-3 rounded-full transition-all duration-300 w-full;
+            max-width: 120px; 
+            /* Gaya default tidak aktif */
+            @apply text-gray-600 bg-transparent; 
+        }
 
-        .input-rupiah {
-            text-align: right;
+        /* Gaya untuk tombol saat aktif */
+        .tab-button-modern.active .tab-content {
+            /* PILL-SHAPED BACKGROUND YANG KONTRAST */
+            @apply bg-indigo-700 text-white shadow-lg ring-2 ring-indigo-300; 
         }
-        /* Style untuk pratinjau struk (hanya untuk dicetak) - TELAH DIESUAIAN UNTUK PRATINJAU SEMPIT */
-        .receipt-print-area {
-            font-family: 'Courier New', monospace; /* Gunakan font monospace yang lebih baik */
-            font-size: 10px; /* Font lebih kecil */
-            width: 200px; /* Lebar sempit untuk pratinjau modal (~58mm) */
-            margin: 0 auto;
-            padding: 5px; /* Padding minimal */
-            line-height: 1.1; /* Baris lebih rapat */
+
+        /* Gaya untuk tombol saat tidak aktif (hover) */
+        .tab-button-modern:not(.active):hover .tab-content {
+             /* Jaga kontras saat hover, tapi tidak sedominan saat aktif */
+             @apply bg-indigo-100 text-indigo-700;
         }
-        /* Style untuk bottom bar - DITINGKATKAN (menambahkan item-center dan justify-center) */
-        .tab-button-bottom {
-            @apply flex flex-col items-center justify-center p-2 text-center text-xs font-semibold hover:bg-gray-50 transition duration-150 flex-grow;
+        
+        .tab-icon {
+            @apply text-xl md:text-2xl;
         }
-        .tab-button-bottom.active {
-            @apply border-indigo-600 text-indigo-600;
+        
+        .tab-label {
+            /* Label hanya muncul di tombol aktif atau di layar lebih besar */
+            @apply hidden ml-2 text-sm font-semibold; 
         }
-        .tab-button-bottom:not(.active) {
-            @apply border-transparent text-gray-600;
+
+        /* PERUBAHAN UTAMA: Membuat label tebal (bold) saat aktif */
+        .tab-button-modern.active .tab-label {
+            /* Paksa label muncul saat aktif dan membuatnya BOLD */
+            @apply inline md:inline font-bold; 
         }
+        /* === MODIFIKASI UNTUK KONTRAST AKTIF SELESAI DI SINI === */
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800">
@@ -61,7 +82,7 @@
         
         <div id="mainContent" class="overflow-y-auto">
             <div id="posView" class="h-full flex flex-col md:flex-row p-2 sm:p-4 bg-gray-50">
-                 <div class="w-full md:w-3/5 p-2 sm:p-4 flex flex-col bg-white shadow-lg rounded-xl overflow-hidden mb-4 md:mb-0 md:h-full flex-shrink-0">
+                <div class="w-full md:w-3/5 p-2 sm:p-4 flex flex-col bg-white shadow-lg rounded-xl overflow-hidden mb-4 md:mb-0 md:h-full flex-shrink-0">
                     <header class="mb-4 flex justify-between items-center border-b pb-3">
                         <h1 class="text-xl font-bold text-indigo-600">Daftar Menu / Produk</h1>
                         <button onclick="showProductModal()" class="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-3 sm:px-4 rounded-lg shadow-md transition duration-150 text-sm sm:text-base">
@@ -200,22 +221,28 @@
 
         </div>
         
-        <nav class="fixed bottom-0 left-0 right-0 bg-white shadow-2xl z-40">
-            <div class="flex border-t border-gray-200 justify-around">
-                <button class="tab-button-bottom tab-button active border-t-2"
+        <nav class="fixed bottom-4 left-4 right-4 bg-indigo-50 border border-indigo-200 shadow-2xl z-40 h-16 rounded-full max-w-lg mx-auto md:h-20"> 
+            <div class="flex justify-around p-1 h-full">
+                <button class="tab-button-modern tab-button active"
                         onclick="switchTab('posView')" data-tab="posView">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v1a3 3 0 01-3 3h-2a3 3 0 01-3-3v-1m0 0h12m-6 4h.01M3 8v11a3 3 0 003 3h12a3 3 0 003-3V8m-14 0h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v1a2 2 0 002 2z"></path></svg>
-                    <span>Utama</span>
+                    <span class="tab-content">
+                        <span class="tab-icon">🏠</span>
+                        <span class="tab-label">Utama</span>
+                    </span>
                 </button>
-                <button class="tab-button-bottom tab-button"
+                <button class="tab-button-modern tab-button"
                         onclick="switchTab('historyView')" data-tab="historyView">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                    <span>Riwayat</span>
+                    <span class="tab-content">
+                        <span class="tab-icon">📜</span>
+                        <span class="tab-label">Riwayat</span>
+                    </span>
                 </button>
-                <button class="tab-button-bottom tab-button"
+                <button class="tab-button-modern tab-button"
                         onclick="switchTab('settingsView')" data-tab="settingsView">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.345 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                    <span>Pengaturan</span>
+                    <span class="tab-content">
+                        <span class="tab-icon">⚙️</span>
+                        <span class="tab-label">Pengaturan</span>
+                    </span>
                 </button>
             </div>
         </nav>
@@ -294,16 +321,15 @@
     <script>
         // --- 1. Konfigurasi dan Variabel Global ---
         const DB_NAME = 'POSAppDB';
-        const DB_VERSION = 3; // Diperbarui versi database untuk penambahan STORE_ACTIVITY_LOGS
+        const DB_VERSION = 3; 
         const STORE_PRODUCTS = 'products';
         const STORE_TRANSACTIONS = 'transactions';
         const STORE_SETTINGS = 'settings'; 
-        const STORE_ACTIVITY_LOGS = 'activityLogs'; // <-- BARU
-        let db; // IndexedDB instance
+        const STORE_ACTIVITY_LOGS = 'activityLogs'; 
+        let db; 
         let resolveConfirm; 
-        let resolvePin; // <-- BARU: Variabel untuk resolver Promise PIN Modal
+        let resolvePin; 
         
-        // Define a set of pastel color classes and corresponding text colors for product cards
         const pastelColors = [
             { bg: 'bg-teal-100', text: 'text-teal-900' },
             { bg: 'bg-rose-100', text: 'text-rose-900' },
@@ -342,35 +368,19 @@
         ];
 
         // --- 2. Utilitas ---
-
-        /**
-         * Mengubah angka menjadi format Rupiah Indonesia (Perbaikan agar tidak muncul karakter aneh 'á' karena spasi).
-         * @param {number} number
-         * @returns {string} Format Rupiah
-         */
         function formatRupiah(number) {
             if (typeof number !== 'number' || isNaN(number)) return 'Rp0';
             const roundedNumber = Math.round(number);
             
-            // Gunakan format Number, bukan Currency, untuk menghindari penambahan simbol 'Rp' dan spasi non-breaking
             const formatter = new Intl.NumberFormat('id-ID', {
                 minimumFractionDigits: 0,
                 maximumFractionDigits: 0
             });
             
-            // Ambil hanya angka yang diformat (e.g., "24.000")
             const formattedNumber = formatter.format(roundedNumber);
             
-            // Tambahkan prefix "Rp" secara manual
             return 'Rp ' + formattedNumber; 
         }
-
-        /**
-         * Menampilkan modal pesan (alert kustom).
-         * @param {string} title
-         * @param {string} message
-         * @param {string} colorClass Tailwind text color class (e.g., 'text-red-600')
-         */
         function showMessageModal(title, message, colorClass = 'text-red-600') {
             document.getElementById('messageTitle').textContent = title;
             document.getElementById('messageTitle').className = `text-xl font-bold mb-3 ${colorClass}`;
@@ -383,13 +393,6 @@
             document.getElementById('messageModal').classList.remove('flex');
             document.getElementById('messageModal').classList.add('hidden');
         }
-
-        /**
-         * Menampilkan modal konfirmasi kustom.
-         * @param {string} title
-         * @param {string} message
-         * @returns {Promise<boolean>} Resolves to true if confirmed, false otherwise.
-         */
         function showConfirmModal(title, message) {
             document.getElementById('confirmTitle').textContent = title;
             document.getElementById('confirmText').textContent = message;
@@ -416,13 +419,6 @@
                 if (resolveConfirm) resolveConfirm(false);
             };
         }
-        
-        /**
-         * BARU: Menampilkan modal input PIN kustom.
-         * @param {string} title
-         * @param {string} message
-         * @returns {Promise<string|null>} Resolves to the entered PIN string, or null if cancelled.
-         */
         function showPinModal(title, message) {
             document.getElementById('pinTitle').textContent = title;
             document.getElementById('pinText').textContent = message;
@@ -445,44 +441,33 @@
         function setupPinModalListeners() {
             const pinInput = document.getElementById('pinInput');
             
-            // Listener untuk tombol Konfirmasi
             document.getElementById('pinSubmitButton').onclick = () => {
                 const pin = pinInput.value.trim();
                 hidePinModal();
                 if (resolvePin) resolvePin(pin);
             };
             
-            // Listener untuk tombol Batal
             document.getElementById('pinCancelButton').onclick = () => {
                 hidePinModal();
-                if (resolvePin) resolvePin(null); // Mengembalikan null jika dibatalkan
+                if (resolvePin) resolvePin(null); 
             };
             
-            // Listener untuk Enter Key pada input
             pinInput.addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') {
                     document.getElementById('pinSubmitButton').click();
                 }
             });
             
-            // Memastikan hanya angka yang diizinkan dan membatasi panjang
              pinInput.addEventListener('input', (e) => {
                 e.target.value = e.target.value.replace(/[^0-9]/g, '');
              });
         }
-        
-        /**
-         * Mencatat aktivitas user ke IndexedDB.
-         * @param {string} type Tipe aktivitas (e.g., 'TRANSACTION_SALE', 'PRODUCT_MANAGE', 'SETTINGS_SAVE')
-         * @param {string} description Detail aktivitas
-         */
-        async function logActivity(type, description) { // <-- BARU
+        async function logActivity(type, description) { 
             const logEntry = {
                 id: Date.now(),
                 timestamp: new Date().toISOString(),
                 type: type,
                 description: description,
-                // Ambil nama kasir dari state
                 cashier: state.settings.cashierName || 'N/A' 
             };
             try {
@@ -493,7 +478,6 @@
         }
         
         // --- 3. Logic Tab View (Diperbarui untuk Bottom Bar) ---
-        
         function switchTab(tabName) {
             state.currentView = tabName;
             
@@ -502,10 +486,9 @@
             document.getElementById('historyView').classList.add('hidden');
             document.getElementById('settingsView').classList.add('hidden');
 
-            // Hapus style aktif dari semua tombol
+            // Hapus style aktif dari semua tombol (menggunakan class .tab-button-modern)
             document.querySelectorAll('.tab-button').forEach(button => {
-                button.classList.remove('active', 'border-indigo-600', 'text-indigo-600');
-                button.classList.add('border-transparent', 'text-gray-600');
+                button.classList.remove('active'); 
             });
 
             // Tampilkan view yang dipilih
@@ -516,8 +499,7 @@
             
             // Tambahkan style aktif ke tombol yang dipilih
             if (activeTabButton) {
-                activeTabButton.classList.add('active', 'border-indigo-600', 'text-indigo-600');
-                activeTabButton.classList.remove('border-transparent', 'text-gray-600');
+                activeTabButton.classList.add('active'); 
             }
             
             // Panggil render/load spesifik untuk tab
@@ -525,15 +507,10 @@
                 renderHistoryView();
             } else if (tabName === 'settingsView') {
                 loadSettingsToForm();
-                // renderActivityLogs(); // Dihapus sesuai permintaan
             }
         }
 
         // --- 4. IndexedDB Core Logic ---
-        
-        /**
-         * Inisialisasi IndexedDB.
-         */
         function initDB() {
             return new Promise((resolve, reject) => {
                 const request = indexedDB.open(DB_NAME, DB_VERSION);
@@ -546,11 +523,9 @@
                     if (!db.objectStoreNames.contains(STORE_TRANSACTIONS)) {
                         db.createObjectStore(STORE_TRANSACTIONS, { keyPath: 'id', autoIncrement: true });
                     }
-                    // Tambahkan STORE_SETTINGS jika belum ada
                     if (!db.objectStoreNames.contains(STORE_SETTINGS)) {
                         db.createObjectStore(STORE_SETTINGS, { keyPath: 'key' });
                     }
-                    // BARU: Tambahkan STORE_ACTIVITY_LOGS
                     if (!db.objectStoreNames.contains(STORE_ACTIVITY_LOGS)) { 
                         db.createObjectStore(STORE_ACTIVITY_LOGS, { keyPath: 'id', autoIncrement: true });
                     }
@@ -570,7 +545,6 @@
                 };
             });
         }
-
         function getAll(storeName) {
             return new Promise((resolve, reject) => {
                 const transaction = db.transaction([storeName], 'readonly');
@@ -581,7 +555,6 @@
                 request.onerror = () => reject(request.error);
             });
         }
-        
         function getOne(storeName, key) {
             return new Promise((resolve, reject) => {
                 const transaction = db.transaction([storeName], 'readonly');
@@ -592,7 +565,6 @@
                 request.onerror = () => reject(request.error);
             });
         }
-
         function putItem(storeName, item) {
             return new Promise((resolve, reject) => {
                 const transaction = db.transaction([storeName], 'readwrite');
@@ -603,7 +575,6 @@
                 request.onerror = () => reject(request.error);
             });
         }
-
         function deleteItem(storeName, id) {
             return new Promise((resolve, reject) => {
                 const transaction = db.transaction([storeName], 'readwrite');
@@ -614,7 +585,6 @@
                 request.onerror = () => reject(request.error);
             });
         }
-
         function clearStore(storeName) {
             return new Promise((resolve, reject) => {
                 const transaction = db.transaction([storeName], 'readwrite');
@@ -650,7 +620,6 @@
             try {
                 const config = await getOne(STORE_SETTINGS, 'receiptConfig');
                 if (config && config.value) {
-                    // Hanya timpa properti yang ada, jaga struktur state default
                     state.settings = { ...state.settings, ...config.value };
                     state.taxPercent = state.settings.taxPercent;
                 }
@@ -659,9 +628,6 @@
             }
         }
 
-        /**
-         * Render daftar produk ke UI (dengan warna pastel).
-         */
         function renderProducts() {
             const container = document.getElementById('productList');
             const searchTerm = document.getElementById('productSearch').value.toLowerCase();
@@ -677,12 +643,10 @@
             }
 
             filteredProducts.forEach(product => {
-                // Tentukan warna berdasarkan ID produk (agar selalu sama)
                 const colorIndex = product.id % pastelColors.length;
                 const color = pastelColors[colorIndex];
 
                 const card = document.createElement('div');
-                // Terapkan kelas warna pastel dan teks yang kontras
                 card.className = `product-card ${color.bg} p-4 rounded-xl shadow-lg cursor-pointer ${product.stock === 0 ? 'opacity-50 grayscale' : ''}`;
                 card.onclick = () => product.stock > 0 ? addToCart(product) : showMessageModal('Stok Habis', `${product.name} saat ini sedang habis.`);
 
@@ -782,33 +746,20 @@
         }
 
         function updateTotals() {
-            // Dapatkan persentase pajak dari state, default 0
             state.taxPercent = state.settings.taxPercent || 0; 
-
-            // 1. Hitung Subtotal Harga Jual
             state.subtotal = state.cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
             
-            // 2. Terapkan Diskon ke Subtotal
             state.discountPercent = parseInt(document.getElementById('discountPercent').value) || 0;
             const subtotalAfterDiscount = state.subtotal * (1 - (state.discountPercent / 100));
             
-            // 3. Hitung DPP dan PPN (Pajak Inklusif)
             const taxFactor = 1 + (state.taxPercent / 100);
-            
-            // DPP = Subtotal / (1 + Tax Rate)
             const dppAmount = subtotalAfterDiscount / taxFactor;
-            
-            // Tax = Subtotal - DPP
             const taxAmount = subtotalAfterDiscount - dppAmount;
             
-            // Total Akhir = Subtotal (setelah diskon)
-            state.total = Math.round(subtotalAfterDiscount); // Bulatkan total akhir
-
-            // Simpan komponen perhitungan ke state
+            state.total = Math.round(subtotalAfterDiscount); 
             state.dpp = Math.round(dppAmount);
             state.tax = Math.round(taxAmount);
 
-            // 4. Update UI
             document.getElementById('subtotal').textContent = formatRupiah(state.subtotal);
             document.getElementById('dppAmount').textContent = formatRupiah(state.dpp);
             document.getElementById('taxAmount').textContent = formatRupiah(state.tax);
@@ -870,7 +821,7 @@
                 };
 
                 await putItem(STORE_TRANSACTIONS, transaction);
-                await logActivity('TRANSACTION_SALE', `Transaksi berhasil, Total: ${formatRupiah(transaction.total)}, ID: ${transaction.id}`); // <-- LOG AKTIVITAS
+                await logActivity('TRANSACTION_SALE', `Transaksi berhasil, Total: ${formatRupiah(transaction.total)}, ID: ${transaction.id}`); 
 
                 for (const cartItem of state.cart) {
                     const productToUpdate = state.products.find(p => p.id === cartItem.id);
@@ -957,7 +908,7 @@
                 showMessageModal('Berhasil', `Produk ${name} telah disimpan.`, 'text-green-600');
                 
                 const logAction = document.getElementById('productId').value ? 'diperbarui' : 'ditambahkan';
-                await logActivity('PRODUCT_MANAGE', `Produk '${name}' ${logAction}. Harga: ${formatRupiah(price)}, Stok: ${stock}.`); // <-- LOG AKTIVITAS
+                await logActivity('PRODUCT_MANAGE', `Produk '${name}' ${logAction}. Harga: ${formatRupiah(price)}, Stok: ${stock}.`); 
 
             } catch (error) {
                 console.error('Failed to save product:', error);
@@ -979,18 +930,15 @@
                 hideProductModal();
                 await loadProducts(); 
                 showMessageModal('Berhasil Dihapus', `Produk ${name} telah dihapus.`, 'text-green-600');
-                await logActivity('PRODUCT_MANAGE', `Produk '${name}' (ID: ${id}) dihapus.`); // <-- LOG AKTIVITAS
+                await logActivity('PRODUCT_MANAGE', `Produk '${name}' (ID: ${id}) dihapus.`); 
             } catch (error) {
                 console.error('Failed to delete product:', error);
                 showMessageModal('Kesalahan Penghapusan', 'Gagal menghapus produk dari database.');
             }
         }
 
-        // --- 8. Logic Riwayat Transaksi (Tab) (Diperbarui dengan Filter & Hapus Per Item) ---
+        // --- 8. Logic Riwayat Transaksi (Tab) ---
 
-        /**
-         * Membersihkan semua filter riwayat transaksi dan me-render ulang.
-         */
         function clearHistoryFilters() {
             document.getElementById('historySearch').value = '';
             document.getElementById('startDateFilter').value = '';
@@ -998,15 +946,10 @@
             renderHistoryView();
         }
 
-        /**
-         * Menghapus riwayat transaksi per item dengan otentikasi password.
-         * @param {number} transactionId ID transaksi
-         */
-        async function confirmDeleteTransaction(transactionId) { // <-- MODIFIKASI: Menggunakan showPinModal
+        async function confirmDeleteTransaction(transactionId) { 
             const confirmed = await showConfirmModal('Hapus Transaksi', `Apakah Anda yakin ingin menghapus Transaksi #${transactionId}? Tindakan ini tidak dapat dibatalkan.`);
             if (!confirmed) return;
             
-            // Minta PIN menggunakan modal kustom
             const pin = await showPinModal('Otentikasi PIN', `Masukkan PIN untuk menghapus Transaksi #${transactionId}:`);
             
             if (pin === null || pin !== '4567') {
@@ -1015,22 +958,21 @@
             }
             
             try {
-                // Revert stock for deleted items (Penting!)
                 const transactionToDelete = await getOne(STORE_TRANSACTIONS, transactionId);
                 if (transactionToDelete && transactionToDelete.items) {
                     for (const item of transactionToDelete.items) {
                         const productToUpdate = state.products.find(p => p.id === item.id);
                         if (productToUpdate) {
-                            productToUpdate.stock += item.quantity; // Kembalikan stok
+                            productToUpdate.stock += item.quantity; 
                             await putItem(STORE_PRODUCTS, productToUpdate);
                         }
                     }
-                    await loadProducts(); // Reload products to update state
+                    await loadProducts(); 
                 }
 
 
                 await deleteItem(STORE_TRANSACTIONS, transactionId);
-                await logActivity('TRANSACTION_DELETE', `Transaksi ID ${transactionId} dihapus dari riwayat (Stok dikembalikan).`); // <-- LOG AKTIVITAS
+                await logActivity('TRANSACTION_DELETE', `Transaksi ID ${transactionId} dihapus dari riwayat (Stok dikembalikan).`); 
                 renderHistoryView();
                 showMessageModal('Berhasil Dihapus', `Transaksi #${transactionId} telah dihapus dari riwayat.`, 'text-green-600');
             } catch (error) {
@@ -1046,25 +988,20 @@
             try {
                 let transactions = await getAll(STORE_TRANSACTIONS);
                 
-                // --- FILTERING LOGIC START ---
                 const searchTerm = document.getElementById('historySearch').value.toLowerCase();
                 const startDateStr = document.getElementById('startDateFilter').value;
                 const endDateStr = document.getElementById('endDateFilter').value;
 
-                // Apply filters
                 transactions = transactions.filter(t => {
-                    // Search Term Filter (ID or Product Name)
                     const matchesSearch = searchTerm === '' ||
                                         t.id.toString().includes(searchTerm) ||
                                         t.items.some(item => item.name.toLowerCase().includes(searchTerm));
 
-                    // Date Range Filter
                     const transactionDate = new Date(t.timestamp);
                     let matchesDate = true;
 
                     if (startDateStr) {
                         const startDate = new Date(startDateStr);
-                        // Set time to start of day for comparison
                         startDate.setHours(0, 0, 0, 0); 
                         if (transactionDate < startDate) {
                             matchesDate = false;
@@ -1073,7 +1010,6 @@
 
                     if (endDateStr) {
                         const endDate = new Date(endDateStr);
-                        // Set time to end of day for comparison
                         endDate.setHours(23, 59, 59, 999); 
                         if (transactionDate > endDate) {
                             matchesDate = false;
@@ -1082,7 +1018,6 @@
 
                     return matchesSearch && matchesDate;
                 });
-                // --- FILTERING LOGIC END ---
 
                 container.innerHTML = ''; 
 
@@ -1094,7 +1029,6 @@
                 transactions.sort((a, b) => b.id - a.id);
 
                 transactions.forEach(t => {
-                    // Pastikan properti pajak ada, jika tidak, gunakan default 0
                     t.dpp = t.dpp || 0;
                     t.tax = t.tax || 0;
                     t.taxPercent = t.taxPercent || 0;
@@ -1107,12 +1041,10 @@
                         <li class="text-sm text-gray-600">${item.name} (${item.quantity}x) - ${formatRupiah(item.price * item.quantity)}</li>
                     `).join('');
                     
-                    // Hitung Diskon Amount
                     const subtotalAfterDiscount = t.subtotal * (1 - (t.discountPercent / 100));
                     const discountAmount = t.subtotal - subtotalAfterDiscount;
 
 
-                    // Buat baris pajak kondisional
                     let taxLinesHistory = '';
                     if (t.taxPercent > 0) {
                         taxLinesHistory = `
@@ -1121,7 +1053,6 @@
                         `;
                     }
 
-                    // Gunakan JSON.stringify untuk melewati objek transaksi yang kompleks ke fungsi onclick
                     const transactionJson = JSON.stringify(t).replace(/"/g, '&quot;'); 
 
                     const historyItem = document.createElement('div');
@@ -1158,7 +1089,7 @@
             }
         }
         
-        // --- 9. Logic Pratinjau Struk & Cetak (Diperbarui untuk Nama Kasir Kondisional) ---
+        // --- 9. Logic Pratinjau Struk & Cetak ---
 
         function renderReceiptPreview(transaction) {
             const date = new Date(transaction.timestamp).toLocaleString('id-ID', {
@@ -1173,21 +1104,16 @@
             transaction.items.forEach(item => {
                 const itemTotal = item.price * item.quantity;
                 itemsHtml += `<div style="display: flex; justify-content: space-between;"><span>${item.name}</span><span>${formatRupiah(itemTotal)}</span></div>`;
-                // MODIFIKASI: text-align: left dan padding-left untuk indentasi
                 itemsHtml += `<div style="text-align: left; margin-bottom: 2px; padding-left: 10px;">${item.quantity} x ${formatRupiah(item.price)}</div>`;
             });
             
-            // Hitung Diskon Amount
             const discountAmount = transaction.subtotal - (transaction.dpp + transaction.tax);
 
-            // Fitur Baru: Buat baris Nama Kasir (Kondisional)
             const cashierNameLine = state.settings.cashierName && state.settings.cashierName.trim() !== ''
                                     ? `<div>Kasir: ${state.settings.cashierName}</div>` 
                                     : ''; 
 
-            // Buat baris pajak kondisional
             let taxLinesHtml = '';
-            // Tampilkan detail pajak hanya jika persentase pajak lebih dari 0
             if (transaction.taxPercent > 0) {
                 taxLinesHtml = `
                     <div style="display: flex; justify-content: space-between; margin-top: 5px;"><span>DPP:</span><span>${formatRupiah(transaction.dpp)}</span></div>
@@ -1253,51 +1179,38 @@
                 <head>
                     <title>Cetak Struk</title>
                     <style>
-                        /* 1. Atur Tampilan Halaman Cetak */
                         @page {
                             margin: 0;
                             size: auto;
                         }
-
-                        /* 2. Atur Style Cetak Utama (Thermal 58mm) */
                         @media print {
                             body {
                                 margin: 0;
                                 padding: 0;
-                                width: 58mm; /* Tentukan lebar fisik kertas */
+                                width: 58mm; 
                                 font-family: 'Courier New', monospace !important;
                                 font-size: 10px;
                                 line-height: 1.1;
                             }
-                            
-                            /* 3. Area Struk */
                             .receipt-print-area {
-                                width: 100% !important; /* Gunakan lebar body 58mm */
+                                width: 100% !important; 
                                 margin: 0 !important;
-                                padding: 5px !important; /* Padding minimal */
+                                padding: 5px !important; 
                             }
-
-                            /* 4. Penyesuaian Detail Item */
                             .receipt-print-area div {
                                 display: block !important;
-                                word-wrap: break-word; /* Pencegahan teks panjang terpotong */
+                                word-wrap: break-word; 
                                 white-space: normal;
                             }
-                            
-                            /* Mengatur baris total/diskon agar tetap menggunakan flex (rata kiri-kanan) */
                             .receipt-print-area div[style*="display: flex"] {
                                 display: flex !important;
                                 justify-content: space-between !important;
                                 align-items: flex-start;
                                 width: 100%;
                             }
-                            
-                            /* Mengurangi indentasi item quantity */
                             .receipt-print-area div[style*="padding-left: 10px"] {
                                  padding-left: 5px !important;
                             }
-
-                            /* Hapus batas border solid yang tebal */
                             .receipt-print-area div[style*="border-top: 1px solid #000"] {
                                 border-top: 1px dashed #000 !important;
                             }
@@ -1321,7 +1234,7 @@
         }
 
 
-        // --- 10. Logic Pengaturan (Tab) (Diperbarui untuk Nama Kasir dan Log Aktivitas) ---
+        // --- 10. Logic Pengaturan (Tab) ---
 
         function loadSettingsToForm() {
             document.getElementById('receiptHeader').value = state.settings.receiptHeader;
@@ -1345,21 +1258,17 @@
 
             try {
                 await putItem(STORE_SETTINGS, settingsObject);
-                // Update state global taxPercent
                 state.taxPercent = taxPercent; 
-                // Render ulang total untuk menerapkan perubahan pajak
                 updateTotals(); 
                 showMessageModal('Berhasil', 'Pengaturan struk, pajak, dan nama kasir telah disimpan.', 'text-green-600');
-                await logActivity('SETTINGS_SAVE', `Pengaturan Struk & Pajak (${taxPercent}%) disimpan.`); // <-- LOG AKTIVITAS
+                await logActivity('SETTINGS_SAVE', `Pengaturan Struk & Pajak (${taxPercent}%) disimpan.`); 
             } catch (error) {
                 console.error('Failed to save settings:', error);
                 showMessageModal('Kesalahan', 'Gagal menyimpan pengaturan.', 'text-red-600');
             }
         }
         
-        // Fungsi renderActivityLogs() Dihapus
-        
-        async function exportActivityLogs() { // <-- BARU
+        async function exportActivityLogs() { 
             try {
                 const logs = await getAll(STORE_ACTIVITY_LOGS);
 
@@ -1389,11 +1298,10 @@
             }
         }
         
-        async function showClearLogsConfirm() { // <-- MODIFIKASI: Menggunakan showPinModal
+        async function showClearLogsConfirm() { 
             const confirmed = await showConfirmModal('Hapus Semua Log', 'Apakah Anda yakin ingin MENGHAPUS SEMUA Log Aktivitas? Tindakan ini tidak dapat dibatalkan.');
             if (!confirmed) return;
             
-            // Minta PIN menggunakan modal kustom
             const pin = await showPinModal('Otentikasi PIN', 'Masukkan PIN untuk menghapus semua log:');
             
             if (pin === null || pin !== '4567') {
@@ -1465,7 +1373,7 @@
                     await clearStore(STORE_PRODUCTS);
                     await clearStore(STORE_TRANSACTIONS);
                     await clearStore(STORE_SETTINGS);
-                    await clearStore(STORE_ACTIVITY_LOGS); // BARU: Bersihkan Log Aktivitas
+                    await clearStore(STORE_ACTIVITY_LOGS); 
 
                     const stores = [
                         { name: STORE_PRODUCTS, data: importedData.products },
@@ -1473,7 +1381,6 @@
                         { name: STORE_SETTINGS, data: importedData.settings }
                     ];
 
-                    // Hanya impor log aktivitas jika ada di file impor
                     if (importedData.activityLogs) {
                          stores.push({ name: STORE_ACTIVITY_LOGS, data: importedData.activityLogs });
                     }
@@ -1512,7 +1419,7 @@
             }
 
             setupConfirmListeners();
-            setupPinModalListeners(); // <-- BARU: Inisialisasi listener modal PIN
+            setupPinModalListeners(); 
             await initDB();
             
             await loadSettings();
@@ -1525,13 +1432,10 @@
             document.getElementById('discountPercent').addEventListener('input', updateTotals);
             document.getElementById('paymentAmount').addEventListener('input', calculateChange);
             document.getElementById('taxPercentInput').addEventListener('input', () => {
-                // Update state settings saat input diubah di settings view
                 state.settings.taxPercent = parseInt(document.getElementById('taxPercentInput').value) || 0;
-                // Simpan segera atau setidaknya refresh total
                 updateTotals(); 
             });
             document.getElementById('cashierNameInput').addEventListener('input', () => {
-                // Update state settings saat input diubah di settings view
                 state.settings.cashierName = document.getElementById('cashierNameInput').value.trim();
             });
         };
