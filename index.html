@@ -344,19 +344,25 @@
         // --- 2. Utilitas ---
 
         /**
-         * Mengubah angka menjadi format Rupiah Indonesia.
+         * Mengubah angka menjadi format Rupiah Indonesia (Perbaikan agar tidak muncul karakter aneh 'á' karena spasi).
          * @param {number} number
          * @returns {string} Format Rupiah
          */
         function formatRupiah(number) {
             if (typeof number !== 'number' || isNaN(number)) return 'Rp0';
-            // Math.round digunakan untuk menghindari pecahan yang tidak perlu akibat pembagian DPP
             const roundedNumber = Math.round(number);
-            return new Intl.NumberFormat('id-ID', {
-                style: 'currency',
-                currency: 'IDR',
-                minimumFractionDigits: 0
-            }).format(roundedNumber);
+            
+            // Gunakan format Number, bukan Currency, untuk menghindari penambahan simbol 'Rp' dan spasi non-breaking
+            const formatter = new Intl.NumberFormat('id-ID', {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            });
+            
+            // Ambil hanya angka yang diformat (e.g., "24.000")
+            const formattedNumber = formatter.format(roundedNumber);
+            
+            // Tambahkan prefix "Rp" secara manual
+            return 'Rp ' + formattedNumber; 
         }
 
         /**
