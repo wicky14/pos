@@ -29,7 +29,8 @@
 
 | # | Tampilan |
 |---|---------|
-| 1 | **Tampilan Utama (POS)**<br>![POS View](screenshots/pos-view.jpg) |
+| 1 | **Tampilan Utama (POS)**<br>![POS View Web](screenshots/utama_web.jpg) |
+| 1 | **Tampilan Utama (POS)**<br>![POS View Mobile](screenshots/utama_m.jpg) |
 | 2 | **Keranjang & Pembayaran**<br>![Cart & Payment](screenshots/cart-payment.jpg) |
 | 3 | **Pratinjau & Cetak Struk**<br>![Receipt Preview](screenshots/receipt-preview.jpg) |
 | 4 | **Riwayat Transaksi**<br>![History](screenshots/history-view.jpg) |
