@@ -5,13 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistem POS</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
+        /* Menggunakan font-weight 700/800 agar bold terlihat jelas */
         body { font-family: 'Inter', sans-serif; }
         #app { min-height: 100vh; display: flex; flex-direction: column; }
         
         /* PENTING: Padding bawah disesuaikan agar konten tidak tertutup bottom bar */
-        /* DIUBAH: Disesuaikan untuk Floating Bar yang lebih tebal dan ada margin bawah (sekitar 96px) */
         #mainContent { 
             flex-grow: 1; 
             overflow-y: hidden; 
@@ -30,45 +30,63 @@
         
         /* * MODIFIKASI UTAMA UNTUK BOTTOM BAR MODERN * */
         .tab-button-modern {
-            /* DIUBAH: Menggunakan h-full, padding vertikal lebih fokus ke konten */
-            @apply flex flex-col items-center justify-center p-2 text-gray-500 transition-all duration-300 flex-grow h-full relative; 
+            @apply flex flex-col items-center justify-center p-2 text-gray-500 transition-all duration-300 ease-in-out flex-grow h-full relative; 
             border-radius: 12px; 
             margin: 0; 
             min-width: 60px;
         }
         
+        /* MODIFIKASI UNTUK PILL SHAPE BACKGROUND */
         .tab-button-modern.active .tab-content {
-            /* Pill-shaped background untuk tombol aktif */
-            @apply bg-indigo-600 text-white shadow-lg;
+            /* Warna latar belakang tombol aktif (Pill-shaped background) menjadi indigo-700 */
+            @apply bg-indigo-700 text-white shadow-xl scale-105; 
+            transform: scale(1.05);
         }
 
         .tab-button-modern:not(.active):hover .tab-content {
-             @apply bg-gray-100 text-indigo-500;
+             @apply bg-indigo-100 text-indigo-700 shadow-md;
+             transform: scale(0.95); 
         }
 
         .tab-content {
             /* Wadah untuk icon dan label agar bisa menjadi bentuk kapsul */
-            @apply flex items-center justify-center p-2 md:px-4 md:py-3 rounded-full transition-all duration-300 w-full;
-            max-width: 120px; /* Batasi lebar tombol agar tidak terlalu lebar di desktop */
+            @apply flex items-center justify-center p-2 md:px-4 md:py-3 rounded-full transition-all duration-300 ease-in-out w-full;
+            max-width: 120px; 
         }
         
         .tab-icon {
             @apply text-xl md:text-2xl;
         }
-        .tab-label {
-            /* DIUBAH: Label hanya muncul di tombol aktif atau di layar lebih besar */
-            @apply hidden md:inline ml-2 text-sm font-semibold; 
+        
+        /* BARU: Memastikan ikon aktif berwarna putih untuk kontras */
+        .tab-button-modern.active .tab-icon {
+            @apply text-white; 
         }
 
+        /* * SOLUSI AKHIR DAN PAKSA TEBAL DENGAN PRIORITAS TERTINGGI * */
+        .tab-label {
+            /* STANDAR (NON-AKTIF): font-semibold (600), sembunyikan di mobile, tampil di md */
+            @apply ml-2 text-sm font-semibold text-gray-700 transition-all duration-300 hidden md:inline; 
+        }
+
+        /* PERBAIKAN FONT AKTIF: PAKSA TEBAL DENGAN PANGGILAN CSS MURNI DAN !important */
         .tab-button-modern.active .tab-label {
-            @apply inline; /* Paksa label muncul saat aktif */
+            /* Properti yang PASTI DIBUTUHKAN (Warna) */
+            @apply text-white; 
+            
+            /* KUNCI PERBAIKAN FONT TEBAL */
+            /* Menggunakan CSS murni dengan !important untuk menimpa semua konflik prioritas */
+            font-weight: 700 !important; /* Nilai 700 adalah 'bold' */
+            
+            /* KUNCI PERBAIKAN VISIBILITY: Paksa tampil di mobile saat aktif */
+            display: inline !important; 
         }
         
         /* * MODIFIKASI BARU: GAUSSIAN BLUR & OPACITY * */
         .floating-nav-blur {
             /* Gaussian Blur */
             backdrop-filter: blur(10px); 
-            -webkit-backdrop-filter: blur(10px); /* Dukungan Safari */
+            -webkit-backdrop-filter: blur(10px); 
             /* Border dan Shadow tetap dipertahankan */
             @apply border border-indigo-200 shadow-2xl; 
         }
@@ -1017,8 +1035,6 @@
                     return matchesSearch && matchesDate;
                 });
                 
-                // --- MODIFIKASI DIMULAI DI SINI ---
-        
                 // 1. Hitung Total Pendapatan Bersih (Total DPP) dari transaksi yang sudah difilter
                 let totalDpp = 0;
                 transactions.forEach(t => {
@@ -1039,7 +1055,7 @@
                 
                 container.innerHTML = ''; // Hapus pesan "Memuat riwayat..."
                 container.appendChild(summaryBox);
-                // --- MODIFIKASI BERAKHIR DI SINI ---
+                
 
                 if (transactions.length === 0) {
                     container.innerHTML += `<p class="text-center text-gray-500 py-10">Tidak ada riwayat transaksi yang cocok dengan filter.</p>`;
