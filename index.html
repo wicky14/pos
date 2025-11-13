@@ -5,12 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistem POS</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; }
         #app { min-height: 100vh; display: flex; flex-direction: column; }
         
         /* PENTING: Padding bawah disesuaikan agar konten tidak tertutup bottom bar */
+        /* DIUBAH: Disesuaikan untuk Floating Bar yang lebih tebal dan ada margin bawah (sekitar 96px) */
         #mainContent { 
             flex-grow: 1; 
             overflow-y: hidden; 
@@ -27,83 +28,50 @@
         .input-rupiah { text-align: right; }
         .receipt-print-area { font-family: 'Courier New', monospace; font-size: 10px; width: 200px; margin: 0 auto; padding: 5px; line-height: 1.1; }
         
-        /* ---------------------------------------------------- */
-        /* === MODIFIKASI UTAMA UNTUK BOTTOM BAR MODERN BLUR === */
-        /* ---------------------------------------------------- */
-        nav {
-            /* Properti posisi */
-            position: fixed; 
-            bottom: 1rem; 
-            left: 1rem; 
-            right: 1rem;
-            z-index: 40;
-            max-width: 32rem; /* max-w-lg */
-            margin-left: auto;
-            margin-right: auto;
-            height: 4rem; /* h-16 */
-            
-            /* Properti visual Tailwind */
-            /* PERUBAHAN: Radius Bottom Bar disamakan dengan kontainer card/utama (rounded-xl) */
-            @apply shadow-2xl rounded-xl md:h-20; 
-            
-            /* Efek Gaussian Blur */
-            background-color: rgba(238, 242, 255, 0.8); /* Indigo-50 dengan opasitas 80% */
-            border: 1px solid rgba(199, 210, 254, 0.4); /* Indigo-200 semi-transparan */
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px); /* Kompatibilitas Safari */
-            
-            /* Transisi untuk memperlancar jika ada perubahan lain */
-            transition: all 0.3s ease;
-        }
-        
+        /* * MODIFIKASI UTAMA UNTUK BOTTOM BAR MODERN * */
         .tab-button-modern {
-            /* Menggunakan h-full, padding vertikal lebih fokus ke konten */
-            @apply flex flex-col items-center justify-center p-1 text-gray-500 transition-all duration-300 flex-grow h-full relative; 
+            /* DIUBAH: Menggunakan h-full, padding vertikal lebih fokus ke konten */
+            @apply flex flex-col items-center justify-center p-2 text-gray-500 transition-all duration-300 flex-grow h-full relative; 
             border-radius: 12px; 
             margin: 0; 
             min-width: 60px;
         }
         
-        /* === MODIFIKASI UNTUK KONTRAST AKTIF DIMULAI DI SINI === */
-        
+        .tab-button-modern.active .tab-content {
+            /* Pill-shaped background untuk tombol aktif */
+            @apply bg-indigo-600 text-white shadow-lg;
+        }
+
+        .tab-button-modern:not(.active):hover .tab-content {
+             @apply bg-gray-100 text-indigo-500;
+        }
+
         .tab-content {
             /* Wadah untuk icon dan label agar bisa menjadi bentuk kapsul */
             @apply flex items-center justify-center p-2 md:px-4 md:py-3 rounded-full transition-all duration-300 w-full;
-            max-width: 120px; 
-            /* Gaya default tidak aktif */
-            @apply text-gray-600 bg-transparent; 
-        }
-
-        /* Gaya untuk tombol saat aktif */
-        .tab-button-modern.active .tab-content {
-            /* Latar belakang solid pada tab aktif */
-            @apply bg-indigo-700 text-white shadow-lg ring-2 ring-indigo-300; 
-            /* Pastikan tidak ada backdrop-filter pada elemen ini agar tampil solid */
-            backdrop-filter: none; 
-            -webkit-backdrop-filter: none;
-        }
-
-        /* Gaya untuk tombol saat tidak aktif (hover) */
-        .tab-button-modern:not(.active):hover .tab-content {
-             /* Jaga kontras saat hover, tapi tidak sedominan saat aktif */
-             @apply bg-indigo-100 text-indigo-700;
+            max-width: 120px; /* Batasi lebar tombol agar tidak terlalu lebar di desktop */
         }
         
         .tab-icon {
             @apply text-xl md:text-2xl;
         }
-        
         .tab-label {
-            /* Label hanya muncul di tombol aktif atau di layar lebih besar */
-            @apply hidden ml-2 text-sm font-semibold; 
+            /* DIUBAH: Label hanya muncul di tombol aktif atau di layar lebih besar */
+            @apply hidden md:inline ml-2 text-sm font-semibold; 
         }
 
-        /* PERUBAHAN UTAMA: Membuat label tebal (bold) saat aktif */
         .tab-button-modern.active .tab-label {
-            /* Paksa label muncul saat aktif dan membuatnya BOLD */
-            @apply inline md:inline font-bold; 
+            @apply inline; /* Paksa label muncul saat aktif */
         }
-        /* === MODIFIKASI UNTUK KONTRAST AKTIF SELESAI DI SINI === */
+        
+        /* * MODIFIKASI BARU: GAUSSIAN BLUR & OPACITY * */
+        .floating-nav-blur {
+            /* Gaussian Blur */
+            backdrop-filter: blur(10px); 
+            -webkit-backdrop-filter: blur(10px); /* Dukungan Safari */
+            /* Border dan Shadow tetap dipertahankan */
+            @apply border border-indigo-200 shadow-2xl; 
+        }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800">
@@ -251,7 +219,7 @@
 
         </div>
         
-        <nav> 
+        <nav class="fixed bottom-4 left-4 right-4 bg-indigo-50 bg-opacity-60 floating-nav-blur z-40 h-16 rounded-full max-w-lg mx-auto md:h-20"> 
             <div class="flex justify-around p-1 h-full">
                 <button class="tab-button-modern tab-button active"
                         onclick="switchTab('posView')" data-tab="posView">
@@ -1048,11 +1016,33 @@
 
                     return matchesSearch && matchesDate;
                 });
-
-                container.innerHTML = ''; 
+                
+                // --- MODIFIKASI DIMULAI DI SINI ---
+        
+                // 1. Hitung Total Pendapatan Bersih (Total DPP) dari transaksi yang sudah difilter
+                let totalDpp = 0;
+                transactions.forEach(t => {
+                    // Pastikan t.dpp ada, jika tidak, gunakan 0
+                    totalDpp += t.dpp || 0; 
+                });
+                
+                // 2. Tampilkan Total Pendapatan Bersih dalam kotak informasi
+                const summaryBox = document.createElement('div');
+                summaryBox.className = 'p-5 mb-4 rounded-xl bg-indigo-50 border-2 border-indigo-200 shadow-md';
+                summaryBox.innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-xl font-semibold text-indigo-700">📈 Total Pendapatan Bersih (DPP)</h3>
+                        <span class="text-2xl font-bold text-indigo-900">${formatRupiah(totalDpp)}</span>
+                    </div>
+                    <p class="text-sm text-gray-600 mt-2">Dihitung dari ${transactions.length} transaksi yang ditampilkan, sebelum PPN dan setelah diskon. Ini adalah **Dasar Pengenaan Pajak (DPP)**.</p>
+                `;
+                
+                container.innerHTML = ''; // Hapus pesan "Memuat riwayat..."
+                container.appendChild(summaryBox);
+                // --- MODIFIKASI BERAKHIR DI SINI ---
 
                 if (transactions.length === 0) {
-                    container.innerHTML = `<p class="text-center text-gray-500 py-10">Tidak ada riwayat transaksi yang cocok dengan filter.</p>`;
+                    container.innerHTML += `<p class="text-center text-gray-500 py-10">Tidak ada riwayat transaksi yang cocok dengan filter.</p>`;
                     return;
                 }
 
