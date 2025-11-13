@@ -40,9 +40,12 @@
 
 ## Cara Pakai
 
-1. **Buka file `index.html` di browser** (Chrome/Firefox/Edge)
-2. Tidak perlu install, tidak perlu internet
-3. Semua data disimpan di **browser Anda** via **IndexedDB**
+1. **Buka langsung di browser**:  
+   [https://wicky14.github.io/pos/](https://wicky14.github.io/pos/)
+
+2. Atau **unduh `index.html`** dan buka offline  
+3. Tidak perlu install, tidak perlu internet  
+4. Semua data disimpan di **browser Anda** via **IndexedDB**
 
 > **Backup rutin**: Gunakan tombol **"Ekspor Semua Data"** di tab **Pengaturan**
 
