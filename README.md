@@ -30,8 +30,8 @@
 | # | Tampilan |
 |---|---------|
 | 1 | **Tampilan Utama**<br>![POS View Web](screenshots/utama_web.png) ![POS View Web](screenshots/utama_m.png) |
-| 2 | **Pengaturan**<br>![Pengaturan](screenshots/setting_web.png) ![Pengaturan](screenshots/setting_web.png) |
-| 3 | **Pratinjau & Cetak Struk**<br>![Receipt Preview](screenshots/struk_web.png) ![Receipt Preview](screenshots/struk_web.png)|
+| 2 | **Pengaturan**<br>![Pengaturan](screenshots/setting_web.png) ![Pengaturan](screenshots/setting_m.png) |
+| 3 | **Pratinjau & Cetak Struk**<br>![Receipt Preview](screenshots/struk_web.png) ![Receipt Preview](screenshots/struk_m.png)|
 | 4 | **Riwayat Transaksi**<br>![History](screenshots/riwayat_web.png) ![History](screenshots/riwayat_m.png) |
 
 > *Screenshot diambil dari perangkat mobile (375px).*
