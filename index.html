@@ -1113,7 +1113,7 @@
                                 <ul class="list-disc pl-5 space-y-1">${itemsList}</ul>
                             </div>
                             <div class="space-y-1 text-sm md:text-base">
-                                <p>Subtotal (Harga Jual): <span class="float-right">${formatRupiah(t.subtotal)}</span></p>
+                                <p>Subtotal : <span class="float-right">${formatRupiah(t.subtotal)}</span></p>
                                 <p>Diskon (${t.discountPercent}%): <span class="float-right text-red-500">-${formatRupiah(Math.round(discountAmount))}</span></p>
                                 ${taxLinesHistory} 
                                 <p class="font-bold text-xl border-t pt-2">Total: <span class="float-right text-green-700">${formatRupiah(t.total)}</span></p>
@@ -1179,7 +1179,7 @@
                     </div>
 
                     <div style="border-top: 1px dashed #000; padding-top: 5px; margin-bottom: 5px;">
-                        <div style="display: flex; justify-content: space-between;"><span>Subtotal (Harga Jual):</span><span>${formatRupiah(transaction.subtotal)}</span></div>
+                        <div style="display: flex; justify-content: space-between;"><span>Subtotal :</span><span>${formatRupiah(transaction.subtotal)}</span></div>
                         <div style="display: flex; justify-content: space-between;"><span>Diskon (${transaction.discountPercent}%):</span><span>-${formatRupiah(Math.round(discountAmount))}</span></div>
                         ${taxLinesHtml} 
                         <div style="display: flex; justify-content: space-between; font-weight: bold; border-top: 1px solid #000; padding-top: 3px;"><span>TOTAL:</span><span>${formatRupiah(transaction.total)}</span></div>
