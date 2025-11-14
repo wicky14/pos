@@ -90,6 +90,12 @@
             /* Border dan Shadow tetap dipertahankan */
             @apply border border-indigo-200 shadow-2xl; 
         }
+        
+        /* BARU: Efek Blur untuk Backdrop Modal, menggunakan nilai blur yang sama */
+        .modal-backdrop-blur {
+            backdrop-filter: blur(10px); 
+            -webkit-backdrop-filter: blur(10px);
+        }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800">
@@ -264,7 +270,7 @@
         </nav>
         </div>
 
-    <div id="messageModal" class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden items-center justify-center p-4 z-50">
+    <div id="messageModal" class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden items-center justify-center p-4 z-50 modal-backdrop-blur">
         <div class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-sm">
             <h3 class="text-xl font-bold mb-3 text-red-600" id="messageTitle">Peringatan!</h3>
             <p id="messageText" class="text-gray-700 mb-5"></p>
@@ -272,7 +278,7 @@
         </div>
     </div>
 
-    <div id="confirmModal" class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden items-center justify-center p-4 z-50">
+    <div id="confirmModal" class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden items-center justify-center p-4 z-50 modal-backdrop-blur">
         <div class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-sm">
             <h3 class="text-xl font-bold mb-3 text-orange-600" id="confirmTitle">Konfirmasi!</h3>
             <p id="confirmText" class="text-gray-700 mb-5"></p>
@@ -283,7 +289,7 @@
         </div>
     </div>
 
-    <div id="productModal" class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden items-center justify-center p-4 z-50">
+    <div id="productModal" class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden items-center justify-center p-4 z-50 modal-backdrop-blur">
         <div class="bg-white rounded-xl shadow-2xl p-8 w-full max-w-md">
             <h3 class="text-2xl font-bold mb-6 text-indigo-700" id="productModalTitle">Tambah Produk Baru</h3>
             <form id="productForm" onsubmit="saveProduct(event)">
@@ -309,7 +315,7 @@
         </div>
     </div>
     
-    <div id="receiptModal" class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden items-center justify-center p-4 z-50">
+    <div id="receiptModal" class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden items-center justify-center p-4 z-50 modal-backdrop-blur">
         <div class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-md">
             <h3 class="text-2xl font-bold mb-4 text-indigo-700 text-center">Pratinjau Struk</h3>
             <div id="receiptPrintArea" class="border border-gray-300 p-4 bg-white overflow-y-auto max-h-[70vh]">
@@ -323,7 +329,7 @@
         </div>
     </div>
     
-    <div id="pinModal" class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden items-center justify-center p-4 z-50">
+    <div id="pinModal" class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden items-center justify-center p-4 z-50 modal-backdrop-blur">
         <div class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-sm">
             <h3 class="text-xl font-bold mb-3 text-indigo-700" id="pinTitle">Masukkan PIN</h3>
             <p id="pinText" class="text-gray-700 mb-4">Harap masukkan PIN 4 angka:</p>
