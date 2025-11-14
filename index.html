@@ -1149,7 +1149,14 @@
                 itemsHtml += `<div style="text-align: left; margin-bottom: 2px; padding-left: 10px;">${item.quantity} x ${formatRupiah(item.price)}</div>`;
             });
             
-            const discountAmount = transaction.subtotal - (transaction.dpp + transaction.tax);
+            // Perhitungan Diskon
+            const subtotalAfterDiscount = transaction.dpp + transaction.tax; 
+            const discountAmount = transaction.subtotal - subtotalAfterDiscount;
+            
+            let discountLineHtml = '';
+            if (discountAmount > 0) {
+                 discountLineHtml = `<div style="display: flex; justify-content: space-between;"><span>Diskon (${transaction.discountPercent}%):</span><span>-${formatRupiah(Math.round(discountAmount))}</span></div>`;
+            }
 
             const cashierNameLine = state.settings.cashierName && state.settings.cashierName.trim() !== ''
                                     ? `<div>Kasir: ${state.settings.cashierName}</div>` 
@@ -1180,7 +1187,7 @@
 
                     <div style="border-top: 1px dashed #000; padding-top: 5px; margin-bottom: 5px;">
                         <div style="display: flex; justify-content: space-between;"><span>Subtotal :</span><span>${formatRupiah(transaction.subtotal)}</span></div>
-                        <div style="display: flex; justify-content: space-between;"><span>Diskon (${transaction.discountPercent}%):</span><span>-${formatRupiah(Math.round(discountAmount))}</span></div>
+                        ${discountLineHtml}
                         ${taxLinesHtml} 
                         <div style="display: flex; justify-content: space-between; font-weight: bold; border-top: 1px solid #000; padding-top: 3px;"><span>TOTAL:</span><span>${formatRupiah(transaction.total)}</span></div>
                     </div>
