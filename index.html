@@ -941,16 +941,24 @@
         async function deleteProduct() {
             const id = parseInt(document.getElementById('productId').value);
             const name = document.getElementById('productName').value;
-
+        
             if (!id) return;
-
+        
+            // 1. KUNCI PERBAIKAN: Menyembunyikan ProductModal segera setelah tombol 'Hapus' diklik
+            hideProductModal(); 
+        
             const confirmed = await showConfirmModal('Hapus Produk', `Apakah Anda yakin ingin menghapus produk "${name}"? Tindakan ini tidak dapat dibatalkan.`);
-            if (!confirmed) return;
-
+            
+            if (!confirmed) {
+                // Jika pengguna membatalkan konfirmasi, kembalikan modal produk
+                showProductModal(id); 
+                return;
+            }
+        
             try {
-                await deleteItem(STORE_PRODUCTS, id);
-                hideProductModal();
-                await loadProducts(); 
+                // Hapus baris hideProductModal() yang lama di sini
+                await loadProducts();
+                await deleteItem(STORE_PRODUCTS, id); 
                 showMessageModal('Berhasil Dihapus', `Produk ${name} telah dihapus.`, 'text-green-600');
                 await logActivity('PRODUCT_MANAGE', `Produk '${name}' (ID: ${id}) dihapus.`); 
             } catch (error) {
