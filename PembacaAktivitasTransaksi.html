@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aktivitas POS (Layar Maksimal)</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        :root {
+            --primary-blue: #0077c9;
+            --secondary-green: #38c172;
+            --bg-light: #f4f7f9;
+            --text-dark: #2c3e50;
+            --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            --border-light: #e0e6ed;
+            --font-main: 'Inter', sans-serif;
+        }
+
+        body {
+            font-family: var(--font-main);
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-light);
+            color: var(--text-dark);
+            line-height: 1.5;
+        }
+
+        /* PERUBAHAN UTAMA: Memaksimalkan Lebar Container */
+        .container {
+            width: 100%;
+            padding: 10px;
+            margin: auto;
+            max-width: 1200px; /* Diperluas untuk layar besar/desktop */
+        }
+
+        header {
+            background-color: white;
+            color: var(--text-dark);
+            padding: 20px 15px;
+            text-align: center;
+            border-radius: 0 0 25px 25px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            margin-bottom: 20px;
+            border-top: 5px solid var(--primary-blue);
+        }
+
+        header h1 {
+            margin: 0 0 5px 0;
+            font-size: 1.8em;
+            font-weight: 700;
+        }
+
+        /* --- Input & Filter Section --- */
+        .controls {
+            margin-bottom: 20px;
+            padding: 15px;
+        }
+
+        #jsonFile {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 1px solid var(--border-light);
+            border-radius: 8px;
+            background-color: white;
+            box-sizing: border-box;
+        }
+        
+        .filter-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: flex-start;
+        }
+
+        .filter-buttons button {
+            background-color: white;
+            border: 1px solid var(--border-light);
+            color: var(--text-dark);
+            padding: 8px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.85em;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .filter-buttons button.active {
+            background-color: var(--primary-blue);
+            color: white;
+            border-color: var(--primary-blue);
+            box-shadow: 0 2px 6px rgba(0, 119, 201, 0.3);
+            font-weight: 600;
+        }
+
+        /* --- Card & Log Item --- */
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            margin-bottom: 15px;
+            padding: 15px;
+        }
+        
+        .activity-log-item {
+            border-bottom: 1px solid var(--border-light);
+            padding: 15px 0;
+            display: flex;
+            flex-direction: column;
+            transition: background-color 0.3s;
+        }
+
+        .activity-log-item:hover {
+             background-color: rgba(0, 119, 201, 0.03);
+        }
+
+        .activity-log-item:last-child {
+            border-bottom: none;
+        }
+
+        .log-header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .log-type-tag {
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.8em;
+            line-height: 1;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            text-transform: uppercase;
+        }
+
+        .log-type-tag i {
+            font-size: 0.9em;
+        }
+
+        /* Warna Tag Kekinian */
+        .log-type-tag.TRANSACTION_SALE {
+            color: white;
+            background-color: var(--secondary-green);
+        }
+
+        .log-type-tag.IMPORT_MANUAL {
+            color: #721c24;
+            background-color: #f8d7da;
+        }
+
+        .log-type-tag.EXPORT_MANUAL {
+            color: #721c24;
+            background-color: #f8d7da;
+        }
+
+        .log-type-tag.SETTINGS_SAVE {
+            color: #6c757d;
+            background-color: #e2e6ea;
+        }
+
+        .log-time {
+            font-size: 0.7em;
+            color: #95a5a6;
+            text-align: right;
+        }
+        
+        .log-description {
+            font-size: 0.95em;
+            margin-top: 8px;
+            font-weight: 600;
+        }
+        
+        .log-cashier {
+            font-size: 0.8em;
+            color: var(--primary-blue);
+            margin-top: 4px;
+        }
+        
+        .transaction-detail {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px dashed var(--border-light);
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .detail-toggle {
+            font-size: 0.85em; 
+            font-weight: 600; 
+            color: var(--primary-blue);
+            display: flex;
+            align-items: center;
+        }
+
+        .detail-toggle i {
+            margin-right: 5px;
+            transition: transform 0.3s ease;
+        }
+
+        .transaction-detail.open .detail-toggle i {
+            transform: rotate(90deg);
+        }
+
+        .item-list {
+            list-style: none;
+            padding: 0;
+            margin: 10px 0 5px 0;
+            font-size: 0.8em;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s ease-in-out;
+            background-color: #fcfcfc;
+            padding: 5px 10px;
+            border-radius: 6px;
+        }
+
+        .item-list li {
+            padding: 3px 0;
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px dotted #ecf0f1;
+        }
+        
+        .item-list li:last-child {
+            border-bottom: none;
+        }
+
+        .transaction-summary {
+            font-size: 0.85em;
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid var(--border-light);
+        }
+        
+        .transaction-summary strong {
+            color: var(--secondary-green);
+            font-size: 1.1em;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <p style="font-size: 0.8em; margin: 0; color: #7f8c8d;">DASHBOARD</p>
+        <h1>Aktivitas POS Terkini</h1>
+        <p style="font-size: 0.7em; margin: 0; color: #7f8c8d;">Data Diekspor: <span id="current-timestamp">Belum ada data diimpor</span></p>
+    </header>
+
+    <div class="controls card">
+        <h2 style="font-size: 1.1em; margin-top: 0; border-bottom: 1px solid var(--border-light); padding-bottom: 10px;">📥 Impor Data JSON</h2>
+        <input type="file" id="jsonFile" accept=".json" onchange="handleFileSelect(event)">
+        
+        <h2 style="font-size: 1.1em; margin-top: 15px; border-bottom: 1px solid var(--border-light); padding-bottom: 10px;">🔍 Filter Cepat</h2>
+        <div class="filter-buttons" id="filterButtons">
+            </div>
+    </div>
+
+    <div class="card">
+        <h2 style="font-size: 1.2em; margin-top: 0;">Riwayat Aktivitas (<span id="logCount">0</span> entri)</h2>
+        <div id="logContainer">
+            <p style="text-align: center; color: #7f8c8d; padding: 20px;">
+                <i class="fas fa-file-upload fa-3x" style="margin-bottom: 10px; color: #b0c4de;"></i><br>
+                ▶ Silakan **Impor File JSON** Anda di bagian atas untuk menampilkan riwayat.
+            </p>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Data awal kosong
+    let currentData = {
+        "dataType": "InitialEmpty",
+        "timestamp": null,
+        "transactions": [],
+        "activityLogs": []
+    };
+    
+    let combinedLogs = [];
+    let uniqueActivityTypes = []; 
+
+    // --- Utility Functions ---
+
+    function formatRupiah(number) {
+        if (typeof number !== 'number') return '-';
+        return new Intl.NumberFormat('id-ID', {
+            style: 'currency',
+            currency: 'IDR',
+            minimumFractionDigits: 0
+        }).format(number);
+    }
+
+    function formatTimestamp(isoString) {
+        if (!isoString) return 'N/A';
+        const date = new Date(isoString);
+        return date.toLocaleDateString('id-ID', {
+            year: 'numeric', month: 'short', day: 'numeric',
+            hour: '2-digit', minute: '2-digit'
+        });
+    }
+
+    function toggleDetails(element) {
+        element.classList.toggle('open');
+        const list = element.querySelector('.item-list');
+        if (element.classList.contains('open')) {
+            list.style.maxHeight = list.scrollHeight + 50 + "px";
+        } else {
+            list.style.maxHeight = "0";
+        }
+    }
+    
+    function getIcon(type) {
+        switch(type) {
+            case 'TRANSACTION_SALE': return 'fas fa-cash-register';
+            case 'IMPORT_MANUAL': return 'fas fa-file-import';
+            case 'EXPORT_MANUAL': return 'fas fa-file-export';
+            case 'SETTINGS_SAVE': return 'fas fa-sliders-h';
+            default: return 'fas fa-info-circle';
+        }
+    }
+    
+    function getDisplayName(type) {
+        return type.replace('_', ' ').toLowerCase().split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+    }
+
+    // --- Data Processing ---
+
+    function combineAndSort(data) {
+        const transactionsMap = new Map();
+        if (data.transactions) {
+            data.transactions.forEach(tx => transactionsMap.set(String(tx.id), tx));
+        }
+
+        const logs = [];
+        const types = new Set(['ALL']);
+
+        if (data.activityLogs) {
+             data.activityLogs.forEach(log => {
+                let logEntry = {...log};
+                types.add(log.type); 
+                
+                if (log.type === 'TRANSACTION_SALE') {
+                    const match = log.description.match(/ID: (\d+)/);
+                    const txId = match ? match[1] : null;
+                    const txDetail = txId ? transactionsMap.get(txId) : null;
+                    
+                    logEntry.isTransaction = true;
+                    logEntry.txId = txId;
+                    logEntry.txDetail = txDetail; 
+                } else {
+                    logEntry.isTransaction = false;
+                }
+                logs.push(logEntry);
+            });
+        }
+       
+        uniqueActivityTypes = Array.from(types);
+
+        logs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        
+        return logs;
+    }
+
+    // --- Dynamic Filter Setup ---
+    
+    function setupDynamicFilterButtons(initialFilter = 'ALL') {
+        const filterContainer = document.getElementById('filterButtons');
+        filterContainer.innerHTML = '';
+        
+        if (uniqueActivityTypes.length <= 1) {
+            filterContainer.innerHTML = '<p style="font-size: 0.9em; color: #7f8c8d;">Filter akan muncul setelah data diimpor.</p>';
+            return;
+        }
+
+        let allButton = document.createElement('button');
+        allButton.setAttribute('data-filter', 'ALL');
+        allButton.classList.add('active');
+        allButton.innerHTML = `<i class="fas fa-list-ul"></i> Semua Aktivitas`;
+        filterContainer.appendChild(allButton);
+        
+        uniqueActivityTypes.filter(type => type !== 'ALL').forEach(type => {
+            let button = document.createElement('button');
+            button.setAttribute('data-filter', type);
+            button.innerHTML = `<i class="${getIcon(type)}"></i> ${getDisplayName(type)}`;
+            filterContainer.appendChild(button);
+            
+            if (type === initialFilter) {
+                 allButton.classList.remove('active');
+                 button.classList.add('active');
+            }
+        });
+
+        filterContainer.removeEventListener('click', handleFilterClick);
+        filterContainer.addEventListener('click', handleFilterClick);
+    }
+    
+    function handleFilterClick(e) {
+        if (e.target.closest('button')) {
+            const button = e.target.closest('button');
+            const filter = button.getAttribute('data-filter');
+            
+            document.querySelectorAll('.filter-buttons button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            button.classList.add('active');
+            
+            if (currentData) {
+                renderData(currentData, filter);
+            }
+        }
+    }
+
+    // --- Rendering ---
+
+    function renderData(data, filter = 'ALL') {
+        currentData = data;
+        combinedLogs = combineAndSort(currentData);
+        
+        document.getElementById('current-timestamp').textContent = data.timestamp ? formatTimestamp(data.timestamp) : 'Belum ada data diimpor';
+        
+        setupDynamicFilterButtons(filter);
+        
+        const logContainer = document.getElementById('logContainer');
+        logContainer.innerHTML = '';
+
+        let filteredLogs = combinedLogs;
+        if (filter !== 'ALL') {
+            filteredLogs = combinedLogs.filter(log => log.type === filter);
+        }
+
+        document.getElementById('logCount').textContent = filteredLogs.length;
+
+        if (filteredLogs.length === 0) {
+             const message = data.transactions.length === 0 && data.activityLogs.length === 0 ? 
+                '<p style="text-align: center; color: #7f8c8d; padding: 20px;"> <i class="fas fa-file-upload fa-3x" style="margin-bottom: 10px; color: #b0c4de;"></i><br>▶ Silakan **Impor File JSON** Anda di bagian atas untuk menampilkan riwayat.</p>' :
+                '<p style="text-align: center; color: #7f8c8d; padding: 20px;">Tidak ada data yang sesuai dengan filter ini.</p>';
+            logContainer.innerHTML = message;
+            return;
+        }
+
+        filteredLogs.forEach(item => {
+            let detailsHTML = '';
+            let isTransactionSale = item.type === 'TRANSACTION_SALE';
+            
+            if (isTransactionSale && item.txDetail) {
+                let itemListHTML = item.txDetail.items.map(detail =>
+                    `<li>${detail.quantity}x ${detail.name} <span style="font-weight: 500;">${formatRupiah(detail.quantity * detail.price)}</span></li>`
+                ).join('');
+
+                detailsHTML = `
+                    <div class="transaction-detail" onclick="toggleDetails(this)">
+                        <span class="detail-toggle"><i class="fas fa-chevron-right"></i> Rincian Item (${item.txDetail.items.length} jenis)</span>
+                        <ul class="item-list">
+                            ${itemListHTML}
+                        </ul>
+                        <div class="transaction-summary">
+                            Subtotal: ${formatRupiah(item.txDetail.subtotal)} | Diskon: ${item.txDetail.discountPercent}%<br>
+                            Pajak (${item.txDetail.taxPercent}%): ${formatRupiah(item.txDetail.tax)}<br>
+                            <strong>Total Bersih: ${formatRupiah(item.txDetail.total)}</strong>
+                        </div>
+                    </div>
+                `;
+            }
+
+            const cashierName = item.cashier && item.cashier !== 'N/A' ? item.cashier : '-';
+            const logTypeClass = item.type;
+            const descriptionText = isTransactionSale ? 
+                `Penjualan sukses, Total: ${formatRupiah(item.txDetail?.total)} (ID: ${item.txId})` : 
+                item.description;
+
+            const itemHTML = `
+                <div class="activity-log-item" data-type="${item.type}">
+                    <div class="log-header-top">
+                        <span class="log-type-tag ${logTypeClass}"><i class="${getIcon(item.type)}"></i> ${getDisplayName(item.type)}</span>
+                        <span class="log-time">${formatTimestamp(item.timestamp)}</span>
+                    </div>
+                    <div class="log-description">${descriptionText}</div>
+                    <div class="log-cashier">Kasir: <strong>${cashierName}</strong></div>
+                    ${detailsHTML}
+                </div>
+            `;
+            logContainer.innerHTML += itemHTML;
+        });
+    }
+    
+    // --- File Handling ---
+
+    function handleFileSelect(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const data = JSON.parse(e.target.result);
+                if (data.transactions || data.activityLogs) {
+                    const newData = {
+                        "dataType": data.dataType || "ImportedData",
+                        "timestamp": data.timestamp || new Date().toISOString(),
+                        "transactions": data.transactions || [],
+                        "activityLogs": data.activityLogs || []
+                    };
+                    renderData(newData);
+                } else {
+                    alert('Kesalahan: Struktur file JSON tidak valid. Harap pastikan ada properti "transactions" dan/atau "activityLogs".');
+                }
+            } catch (error) {
+                alert('Kesalahan saat membaca file: Pastikan file yang diunggah adalah file JSON yang valid.');
+                console.error("Error reading JSON file:", error);
+            }
+        };
+        reader.readAsText(file);
+    }
+
+    // --- Initial Load ---
+    document.addEventListener('DOMContentLoaded', () => {
+        renderData(currentData);
+    });
+
+</script>
+
+</body>
+</html>
