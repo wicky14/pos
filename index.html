@@ -1764,10 +1764,10 @@
                 link.click();
                 document.body.removeChild(link);
                 
-                showMessageModal('Ekspor Berhasil', 'Riwayat transaksi dan **Log Aktivitas** berhasil diunduh. File ini siap diunggah ke Shared Link Dropbox untuk konsolidasi.', 'text-green-600');
+                showMessageModal('Ekspor Berhasil', 'Riwayat transaksi berhasil diunduh. File ini siap diunggah ke Shared Link Dropbox untuk konsolidasi.', 'text-green-600');
                 
                 // LOG AKTIVITAS BARU
-                await logActivity('EXPORT_TRANSACTIONS_CABANG', 'Riwayat transaksi & log aktivitas diekspor untuk konsolidasi.');
+                await logActivity('EXPORT_TRANSACTIONS_CABANG', 'Riwayat transaksi diekspor untuk konsolidasi.');
 
             } catch (error) {
                 console.error('Export transactions failed:', error);
@@ -1790,7 +1790,7 @@
                  return;
             }
 
-            const pin = await showPinModal('Otentikasi PIN', `Masukkan PIN (4567) untuk Menggabungkan Riwayat Transaksi dari **${syncUrls.length}** Cloud Link:`);
+            const pin = await showPinModal('Otentikasi PIN', `Masukkan PIN untuk Menggabungkan Riwayat Transaksi dari **${syncUrls.length}** Cloud Link:`);
             if (pin === null || pin !== '4567') {
                 showMessageModal('PIN Salah', 'Penggabungan transaksi dibatalkan.', 'text-red-600');
                 return;
