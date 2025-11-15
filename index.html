@@ -69,13 +69,12 @@
             @apply ml-2 text-sm font-semibold text-gray-700 transition-all duration-300 hidden md:inline; 
         }
 
-        /* PERBAIKAN FONT AKTIF: PAKSA TEBAL DENGAN PANGGILAN CSS MURNI DAN !important */
+        /* PERBAIKAN FONT TEBAL AKTIF: PAKSA TEBAL DENGAN PANGGILAN CSS MURNI DAN PRIORITAS TERTINGGI */
         .tab-button-modern.active .tab-label {
             /* Properti yang PASTI DIBUTUHKAN (Warna) */
             @apply text-white; 
             
             /* KUNCI PERBAIKAN FONT TEBAL */
-            /* Menggunakan CSS murni dengan !important untuk menimpa semua konflik prioritas */
             font-weight: 700 !important; /* Nilai 700 adalah 'bold' */
             
             /* KUNCI PERBAIKAN VISIBILITY: Paksa tampil di mobile saat aktif */
@@ -231,8 +230,37 @@
                         <p class="text-xs text-gray-500 mt-2">Setelah mengunduh, Anda harus mengunggah file **pos_sync_data.json** ini secara manual ke Shared Folder Dropbox Anda.</p>
                     </div>
                 </div>
+
                 <div class="mb-8 border p-6 rounded-lg bg-gray-50">
-                    <h3 class="text-xl font-bold mb-4 text-gray-800">3. Ekspor & Impor Data Lokal</h3>
+                    <h3 class="text-xl font-bold mb-4 text-gray-800">3. Konsolidasi Data Transaksi (Multi-Cabang)</h3>
+                    <p class="text-gray-600 mb-4 text-sm">Gunakan fitur ini untuk mengirim atau menggabungkan riwayat transaksi antar cabang secara terpisah.</p>
+                    
+                    <div class="space-y-4 mb-6">
+                        <label for="transactionSyncLink" class="block text-sm font-medium text-gray-700">Daftar Shared Link Dropbox Riwayat Transaksi (Per Cabang)</label>
+                        <div class="flex space-x-2 mt-1">
+                            <textarea id="transactionSyncLink" rows="4" class="block w-full p-3 border border-gray-300 rounded-lg" placeholder="Masukkan satu link per baris. Contoh:&#10;https://www.dropbox.com/scl/fi/..../cabang_a.json?dl=0&#10;https://www.dropbox.com/scl/fi/..../cabang_b.json?dl=0"></textarea>
+                            <button onclick="saveTransactionSyncLink()" class="bg-purple-400 hover:bg-purple-500 text-white font-semibold py-3 px-4 rounded-lg shadow-md transition duration-150 flex-shrink-0">Simpan Link</button>
+                        </div>
+                        <p class="text-xs text-gray-500">Link akan dikonversi otomatis ke format unduhan langsung setelah disimpan. Pastikan setiap link berada pada baris baru.</p>
+                    </div>
+
+                    <div class="flex flex-col space-y-4 md:flex-row md:space-y-0 md:space-x-4">
+                        <div class="flex-1">
+                            <button onclick="exportTransactionsOnly()" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 rounded-lg shadow-md transition duration-150">
+                                📥 Ekspor Riwayat Transaksi Saja
+                            </button>
+                            <p class="text-sm text-gray-600 mt-2">Unduh semua riwayat transaksi dan **log aktivitas** ke file JSON (untuk diunggah ke Shared Link).</p>
+                        </div>
+                        <div class="flex-1">
+                            <button onclick="syncTransactionFromDropbox()" class="w-full bg-purple-500 hover:bg-purple-600 text-white font-semibold py-3 rounded-lg shadow-md cursor-pointer transition duration-150">
+                                🔄 Gabungkan Riwayat dari Link
+                            </button>
+                            <p class="text-sm text-gray-600 mt-2">Gabungkan transaksi dan log aktivitas dari file JSON yang di-link. Proses ini membutuhkan **otentikasi PIN**.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="mb-8 border p-6 rounded-lg bg-gray-50">
+                    <h3 class="text-xl font-bold mb-4 text-gray-800">4. Ekspor & Impor Data Lokal</h3>
                     <div class="flex flex-col space-y-4 md:flex-row md:space-y-0 md:space-x-4">
                         <div class="flex-1">
                             <button onclick="exportData()" class="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-3 rounded-lg shadow-md transition duration-150">
@@ -362,7 +390,7 @@
                 <button id="syncConfirmButton" onclick="performCloudImport(this.dataset.importedData)" class="flex-1 bg-green-500 hover:bg-green-600 text-white font-semibold py-2 rounded-lg">
                     Ya, Sinkronkan Sekarang
                 </button>
-                <button onclick="document.getElementById('syncConfirmModal').classList.add('hidden')" class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 rounded-lg">
+                <button onclick="document.getElementById('syncConfirmModal').classList.remove('flex'); document.getElementById('syncConfirmModal').classList.add('hidden');" class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 rounded-lg">
                     Batal
                 </button>
             </div>
@@ -387,7 +415,8 @@
         const STORE_TRANSACTIONS = 'transactions';
         const STORE_SETTINGS = 'settings'; 
         const STORE_ACTIVITY_LOGS = 'activityLogs'; 
-        const DB_LINK_STORAGE_KEY = 'pos_dropbox_sync_link'; // Kunci baru untuk menyimpan Shared Link
+        const DB_LINK_STORAGE_KEY = 'pos_dropbox_sync_link'; // Kunci untuk sinkronisasi data penuh
+        const TRANSACTION_LINK_STORAGE_KEY = 'pos_dropbox_transaction_link'; // Kunci baru untuk sinkronisasi transaksi saja
         
         let db; 
         let resolveConfirm; 
@@ -570,7 +599,8 @@
                 renderHistoryView();
             } else if (tabName === 'settingsView') {
                 loadSettingsToForm();
-                loadSyncLink(); // Muat link saat masuk Pengaturan
+                loadSyncLink(); // Muat link data penuh
+                loadTransactionSyncLink(); // Muat link transaksi
             }
         }
 
@@ -585,13 +615,13 @@
                         db.createObjectStore(STORE_PRODUCTS, { keyPath: 'id', autoIncrement: true });
                     }
                     if (!db.objectStoreNames.contains(STORE_TRANSACTIONS)) {
-                        db.createObjectStore(STORE_TRANSACTIONS, { keyPath: 'id', autoIncrement: true });
+                        db.createObjectStore(STORE_TRANSACTIONS, { keyPath: 'id' }); // Tetap tanpa autoIncrement agar ID transaksi (timestamp) unik
                     }
                     if (!db.objectStoreNames.contains(STORE_SETTINGS)) {
                         db.createObjectStore(STORE_SETTINGS, { keyPath: 'key' });
                     }
                     if (!db.objectStoreNames.contains(STORE_ACTIVITY_LOGS)) { 
-                        db.createObjectStore(STORE_ACTIVITY_LOGS, { keyPath: 'id', autoIncrement: true });
+                        db.createObjectStore(STORE_ACTIVITY_LOGS, { keyPath: 'id' }); // ID Log juga harus unik (timestamp)
                     }
                     console.log('Database setup complete.');
                 };
@@ -1348,6 +1378,8 @@
             document.getElementById('receiptFooter').value = state.settings.receiptFooter;
             document.getElementById('taxPercentInput').value = state.settings.taxPercent || 0;
             document.getElementById('cashierNameInput').value = state.settings.cashierName || ''; 
+            // BARU: Muat link konsolidasi ke form
+            loadTransactionSyncLink(); 
         }
 
         async function saveSettings() {
@@ -1667,6 +1699,192 @@
             }
         }
 
+        // --- BAGIAN BARU: KONSOLIDASI TRANSAKSI CABANG ---
+
+        function loadTransactionSyncLink() {
+            const link = localStorage.getItem(TRANSACTION_LINK_STORAGE_KEY) || '';
+            const linkInput = document.getElementById('transactionSyncLink');
+            // Menggunakan value untuk textarea
+            if (linkInput) linkInput.value = link; 
+            return link;
+        }
+
+        function saveTransactionSyncLink() {
+            const linkInput = document.getElementById('transactionSyncLink');
+            const rawLinks = linkInput.value.trim();
+            
+            if (rawLinks) {
+                // Pisahkan semua baris, filter baris kosong, dan normalisasi setiap link
+                const linkArray = rawLinks.split('\n')
+                    .map(link => link.trim())
+                    .filter(link => link.length > 0);
+                
+                const normalizedLinks = linkArray.map(link => normalizeDropboxLink(link)).join('\n');
+                
+                // Simpan kembali string yang sudah dinormalisasi ke textarea dan localStorage
+                linkInput.value = normalizedLinks;
+                localStorage.setItem(TRANSACTION_LINK_STORAGE_KEY, normalizedLinks);
+                
+                showMessageModal('Berhasil Dikonversi & Disimpan', 
+                    `Berhasil menyimpan **${linkArray.length}** Shared Link Riwayat Transaksi yang telah dikonversi ke format Unduhan Langsung.`, 
+                    'text-green-600'
+                );
+            } else {
+                localStorage.removeItem(TRANSACTION_LINK_STORAGE_KEY);
+                showMessageModal('Peringatan', 'Shared Link Riwayat Transaksi dikosongkan.', 'text-orange-500');
+            }
+        }
+
+        async function exportTransactionsOnly() {
+            try {
+                // --- BARU: Ambil log aktivitas ---
+                const logs = await getAll(STORE_ACTIVITY_LOGS); 
+                // ----------------------------------
+                
+                const transactions = await getAll(STORE_TRANSACTIONS);
+
+                const exportObject = {
+                    dataType: "TransactionsOnly", 
+                    timestamp: new Date().toISOString(),
+                    transactions: transactions,
+                    // --- BARU: Sertakan log aktivitas dalam objek ekspor ---
+                    activityLogs: logs
+                    // --------------------------------------------------------
+                };
+
+                const dataStr = JSON.stringify(exportObject, null, 2);
+                const blob = new Blob([dataStr], { type: "application/json" });
+                const url = URL.createObjectURL(blob);
+                
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `pos_transactions_only_${new Date().toISOString().slice(0, 10)}.json`; 
+                
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                showMessageModal('Ekspor Berhasil', 'Riwayat transaksi dan **Log Aktivitas** berhasil diunduh. File ini siap diunggah ke Shared Link Dropbox untuk konsolidasi.', 'text-green-600');
+                
+                // LOG AKTIVITAS BARU
+                await logActivity('EXPORT_TRANSACTIONS_CABANG', 'Riwayat transaksi & log aktivitas diekspor untuk konsolidasi.');
+
+            } catch (error) {
+                console.error('Export transactions failed:', error);
+                showMessageModal('Kesalahan Ekspor', 'Gagal mengekspor riwayat transaksi.', 'text-red-600');
+            }
+        }
+
+        async function syncTransactionFromDropbox() {
+            const rawSyncUrls = loadTransactionSyncLink();
+            
+            if (!rawSyncUrls) { 
+                 showMessageModal('Gagal Sinkronisasi', 'Shared Link Riwayat Transaksi belum disetel. Harap masukkan daftar link di Pengaturan dan tekan "Simpan Link" terlebih dahulu.', 'text-red-600');
+                 return;
+            }
+            
+            const syncUrls = rawSyncUrls.split('\n').filter(url => url.includes('dl.dropboxusercontent.com'));
+            
+            if (syncUrls.length === 0) {
+                 showMessageModal('Gagal Sinkronisasi', 'Tidak ada link yang valid dan sudah dinormalisasi ditemukan. Harap periksa input Anda.', 'text-red-600');
+                 return;
+            }
+
+            const pin = await showPinModal('Otentikasi PIN', `Masukkan PIN (4567) untuk Menggabungkan Riwayat Transaksi dari **${syncUrls.length}** Cloud Link:`);
+            if (pin === null || pin !== '4567') {
+                showMessageModal('PIN Salah', 'Penggabungan transaksi dibatalkan.', 'text-red-600');
+                return;
+            }
+
+            showMessageModal('Memulai Penggabungan...', `Akan memproses ${syncUrls.length} file riwayat transaksi.`, 'text-blue-500', 0); 
+            
+            let totalMergedCount = 0;
+            const existingTransactions = await getAll(STORE_TRANSACTIONS);
+            const existingIds = new Set(existingTransactions.map(t => t.id));
+
+            let totalMergedLogsCount = 0;
+            // --- BARU: Ambil semua ID log yang sudah ada ---
+            const existingLogs = await getAll(STORE_ACTIVITY_LOGS);
+            const existingLogIds = new Set(existingLogs.map(l => l.id));
+            // ----------------------------------------------------
+
+            try {
+                // LOOP melalui setiap URL
+                for (let i = 0; i < syncUrls.length; i++) {
+                    const syncUrl = syncUrls[i];
+                    const branchName = `Cabang ${i + 1}`; 
+                    showMessageModal('Mengunduh Riwayat...', `(${i + 1}/${syncUrls.length}) Mengunduh file dari ${branchName}...`, 'text-blue-500', 0); 
+
+                    // 1. Ambil Data
+                    const response = await fetch(syncUrl, { cache: 'no-store' }); 
+                    
+                    if (!response.ok) {
+                        console.warn(`Gagal mengambil file dari ${branchName}: ${response.status} ${response.statusText}. Melewati.`);
+                        await logActivity('SYNC_TRANSACTION_ERROR', `Gagal mengambil file dari ${branchName}. Status: ${response.status}`);
+                        continue; 
+                    }
+                    
+                    const fileContent = await response.text();
+                    const importedData = JSON.parse(fileContent);
+
+                    if (importedData.dataType !== "TransactionsOnly" || !importedData.transactions) {
+                        console.warn(`File ${branchName} tidak memiliki struktur transaksi yang benar. Melewati.`);
+                        await logActivity('SYNC_TRANSACTION_ERROR', `Struktur file ${branchName} tidak valid.`);
+                        continue;
+                    }
+                    
+                    // 2. Gabungkan Transaksi
+                    const transactionsToMerge = importedData.transactions;
+                    let mergedCount = 0;
+
+                    for (const transaction of transactionsToMerge) {
+                        if (!existingIds.has(transaction.id)) {
+                            await putItem(STORE_TRANSACTIONS, transaction); 
+                            existingIds.add(transaction.id); 
+                            mergedCount++;
+                        }
+                    }
+                    totalMergedCount += mergedCount;
+                    
+                    // --- BARU: Logika Penggabungan Log Aktivitas ---
+                    if (importedData.activityLogs && importedData.activityLogs.length > 0) {
+                        let mergedLogsCount = 0;
+                        for (const log of importedData.activityLogs) {
+                            if (!existingLogIds.has(log.id)) {
+                                await putItem(STORE_ACTIVITY_LOGS, log);
+                                existingLogIds.add(log.id); 
+                                mergedLogsCount++;
+                            }
+                        }
+                        totalMergedLogsCount += mergedLogsCount;
+                        await logActivity('SYNC_LOG_MERGE', `Menggabungkan ${mergedLogsCount} log aktivitas baru dari ${branchName}.`);
+                    }
+                    // ----------------------------------------------------
+
+                    // LOG KEBERHASILAN PENGGABUNGAN PER CABANG
+                    await logActivity('SYNC_TRANSACTION_MERGE', `Menggabungkan ${mergedCount} transaksi baru dari ${branchName}.`);
+                } // END LOOP
+
+                hideMessageModal();
+                renderHistoryView();
+                
+                // LOG RINGKASAN PROSES DAN UPDATE MESSAGE MODAL
+                await logActivity('SYNC_TRANSACTION_SUMMARY', 
+                    `Berhasil menggabungkan total ${totalMergedCount} transaksi dan ${totalMergedLogsCount} log aktivitas dari ${syncUrls.length} link cabang.`
+                );
+
+                showMessageModal('Penggabungan Cloud Berhasil!', 
+                    `Berhasil menggabungkan **${totalMergedCount}** transaksi baru dan **${totalMergedLogsCount}** log aktivitas baru dari total **${syncUrls.length}** file cabang yang diproses.`, 
+                    'text-green-600'
+                );
+
+            } catch (error) {
+                console.error("Kesalahan Sinkronisasi Dropbox Transaksi Global:", error);
+                hideMessageModal();
+                showMessageModal('Gagal Gabungkan', `Kesalahan saat memproses penggabungan: ${error.message}`, 'text-red-600');
+            }
+        }
+
 
         // --- 13. Inisialisasi Aplikasi ---
 
@@ -1682,6 +1900,7 @@
             
             // Muat Link Sinkronisasi dan pengaturan lainnya
             loadSyncLink();
+            loadTransactionSyncLink(); // Muat link transaksi
             await loadSettings();
             await loadProducts();
             
