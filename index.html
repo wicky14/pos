@@ -957,8 +957,8 @@
         
             try {
                 // Hapus baris hideProductModal() yang lama di sini
-                await loadProducts();
                 await deleteItem(STORE_PRODUCTS, id); 
+                await loadProducts();
                 showMessageModal('Berhasil Dihapus', `Produk ${name} telah dihapus.`, 'text-green-600');
                 await logActivity('PRODUCT_MANAGE', `Produk '${name}' (ID: ${id}) dihapus.`); 
             } catch (error) {
