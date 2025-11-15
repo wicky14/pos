@@ -209,7 +209,30 @@
                 </div>
 
                 <div class="mb-8 border p-6 rounded-lg bg-gray-50">
-                    <h3 class="text-xl font-bold mb-4 text-gray-800">2. Ekspor & Impor Data</h3>
+                    <h3 class="text-xl font-bold mb-4 text-gray-800">2. Sinkronisasi Data Dropbox (Manual)</h3>
+                    <p class="text-gray-600 mb-4 text-sm">Gunakan fitur ini untuk memuat data dari (Baca) atau mengunduh data (Tulis) melalui Shared Link Dropbox. Link yang Anda simpan akan **otomatis dikonversi** ke format unduhan langsung (`dl.dropboxusercontent.com`) saat disimpan.</p>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <label for="dropboxSyncLink" class="block text-sm font-medium text-gray-700">Shared Link Dropbox</label>
+                            <div class="flex space-x-2 mt-1">
+                                <input type="url" id="dropboxSyncLink" class="block w-full p-3 border border-gray-300 rounded-lg" placeholder="Contoh: https://www.dropbox.com/scl/fi/..../pos_sync_data.json?dl=0">
+                                <button onclick="saveSyncLink()" class="bg-indigo-400 hover:bg-indigo-500 text-white font-semibold py-3 px-4 rounded-lg shadow-md transition duration-150 flex-shrink-0">Simpan Link</button>
+                            </div>
+                        </div>
+                        
+                        <button id="syncFromDropboxButton" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 rounded-lg shadow-md transition duration-150">
+                            Sinkronisasi Data (Baca/Muat Terbaru)
+                        </button>
+                        
+                        <button id="downloadDataButton" class="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-3 rounded-lg shadow-md transition duration-150">
+                            Unduh Data Backup (Untuk Upload Manual)
+                        </button>
+                        <p class="text-xs text-gray-500 mt-2">Setelah mengunduh, Anda harus mengunggah file **pos_sync_data.json** ini secara manual ke Shared Folder Dropbox Anda.</p>
+                    </div>
+                </div>
+                <div class="mb-8 border p-6 rounded-lg bg-gray-50">
+                    <h3 class="text-xl font-bold mb-4 text-gray-800">3. Ekspor & Impor Data Lokal</h3>
                     <div class="flex flex-col space-y-4 md:flex-row md:space-y-0 md:space-x-4">
                         <div class="flex-1">
                             <button onclick="exportData()" class="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-3 rounded-lg shadow-md transition duration-150">
@@ -228,7 +251,7 @@
                 </div>
                 
                 <div class="mb-8 border p-6 rounded-lg bg-gray-50">
-                    <h3 class="text-xl font-bold mb-4 text-gray-800">3. Log Seluruh Kegiatan User</h3>
+                    <h3 class="text-xl font-bold mb-4 text-gray-800">5. Log Seluruh Kegiatan User</h3>
                     <p class="text-gray-600 mb-4">Catatan semua aktivitas (transaksi, manajemen produk, pengaturan) disimpan secara lokal dan dapat diunduh untuk audit.</p>
                     <div class="mt-4 flex flex-col space-y-4 md:flex-row md:space-y-0 md:space-x-4">
                         <button onclick="exportActivityLogs()" class="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 rounded-lg shadow-md transition duration-150">
@@ -329,6 +352,22 @@
         </div>
     </div>
     
+    <div id="syncConfirmModal" class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden items-center justify-center p-4 z-50 modal-backdrop-blur">
+        <div class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-sm">
+            <h3 class="text-xl font-bold mb-3 text-indigo-700">✅ File Backup Berhasil Diunduh!</h3>
+            <p class="text-gray-700 mb-2">File telah berhasil diunduh dari Dropbox dan siap untuk menimpa data lokal Anda.</p>
+            <p class="text-sm font-semibold text-orange-600 mb-4">Waktu File Backup: <span id="syncConfirmTimestamp">Memuat...</span></p>
+            <p class="text-sm text-red-600 mb-5 font-bold">PERINGATAN: Menekan tombol di bawah akan **MENGHAPUS DAN MENIMPA** semua data lokal Anda dengan data dari file ini.</p>
+            <div class="flex space-x-4">
+                <button id="syncConfirmButton" onclick="performCloudImport(this.dataset.importedData)" class="flex-1 bg-green-500 hover:bg-green-600 text-white font-semibold py-2 rounded-lg">
+                    Ya, Sinkronkan Sekarang
+                </button>
+                <button onclick="document.getElementById('syncConfirmModal').classList.add('hidden')" class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 rounded-lg">
+                    Batal
+                </button>
+            </div>
+        </div>
+    </div>
     <div id="pinModal" class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden items-center justify-center p-4 z-50 modal-backdrop-blur">
         <div class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-sm">
             <h3 class="text-xl font-bold mb-3 text-indigo-700" id="pinTitle">Masukkan PIN</h3>
@@ -348,6 +387,8 @@
         const STORE_TRANSACTIONS = 'transactions';
         const STORE_SETTINGS = 'settings'; 
         const STORE_ACTIVITY_LOGS = 'activityLogs'; 
+        const DB_LINK_STORAGE_KEY = 'pos_dropbox_sync_link'; // Kunci baru untuk menyimpan Shared Link
+        
         let db; 
         let resolveConfirm; 
         let resolvePin; 
@@ -529,6 +570,7 @@
                 renderHistoryView();
             } else if (tabName === 'settingsView') {
                 loadSettingsToForm();
+                loadSyncLink(); // Muat link saat masuk Pengaturan
             }
         }
 
@@ -617,6 +659,14 @@
                 request.onerror = () => reject(request.error);
             });
         }
+        
+        async function clearAllData() {
+            await clearStore(STORE_PRODUCTS);
+            await clearStore(STORE_TRANSACTIONS);
+            await clearStore(STORE_SETTINGS);
+            await clearStore(STORE_ACTIVITY_LOGS);
+        }
+
 
         // --- 5. Logic Aplikasi (Produk & Keranjang) ---
 
@@ -1397,13 +1447,16 @@
                 
                 const link = document.createElement('a');
                 link.href = url;
-                link.download = `pos_data_export_${new Date().toISOString().slice(0, 10)}.json`;
+                
+                // MODIFIKASI: Nama file statis untuk Version Control Dropbox
+                link.download = `pos_sync_data.json`; 
                 
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
                 
-                showMessageModal('Ekspor Berhasil', 'Data berhasil diekspor sebagai file JSON.', 'text-green-600');
+                showMessageModal('Ekspor Berhasil', 'Data berhasil diunduh sebagai file **pos_sync_data.json**. Harap unggah file ini secara manual ke Dropbox Anda.', 'text-green-600');
+                await logActivity('EXPORT_MANUAL', 'Data diekspor secara manual untuk backup.');
 
             } catch (error) {
                 console.error('Export failed:', error);
@@ -1411,6 +1464,31 @@
             }
         }
         
+        // Kunci: Fungsi impor yang lebih modular untuk digunakan oleh importData dan syncFromDropbox
+        async function processImport(importedData) {
+             if (!importedData.products || !importedData.transactions || !importedData.settings) {
+                throw new Error("File JSON tidak memiliki struktur yang benar (membutuhkan products, transactions, settings).");
+             }
+             
+             await clearAllData();
+
+             const stores = [
+                { name: STORE_PRODUCTS, data: importedData.products },
+                { name: STORE_TRANSACTIONS, data: importedData.transactions },
+                { name: STORE_SETTINGS, data: importedData.settings }
+             ];
+
+             if (importedData.activityLogs) {
+                 stores.push({ name: STORE_ACTIVITY_LOGS, data: importedData.activityLogs });
+             }
+
+             for (const store of stores) {
+                 for (const item of store.data) {
+                     await putItem(store.name, item);
+                 }
+             }
+        }
+
         async function importData(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -1422,32 +1500,8 @@
             reader.onload = async (e) => {
                 try {
                     const importedData = JSON.parse(e.target.result);
-
-                    if (!importedData.products || !importedData.transactions || !importedData.settings) {
-                        throw new Error("File JSON tidak memiliki struktur yang benar (membutuhkan products, transactions, settings).");
-                    }
                     
-                    await clearStore(STORE_PRODUCTS);
-                    await clearStore(STORE_TRANSACTIONS);
-                    await clearStore(STORE_SETTINGS);
-                    await clearStore(STORE_ACTIVITY_LOGS); 
-
-                    const stores = [
-                        { name: STORE_PRODUCTS, data: importedData.products },
-                        { name: STORE_TRANSACTIONS, data: importedData.transactions },
-                        { name: STORE_SETTINGS, data: importedData.settings }
-                    ];
-
-                    if (importedData.activityLogs) {
-                         stores.push({ name: STORE_ACTIVITY_LOGS, data: importedData.activityLogs });
-                    }
-
-
-                    for (const store of stores) {
-                        for (const item of store.data) {
-                            await putItem(store.name, item);
-                        }
-                    }
+                    await processImport(importedData);
                     
                     await loadSettings();
                     await loadProducts();
@@ -1455,6 +1509,7 @@
                     updateTotals();
                     
                     switchTab('posView'); 
+                    await logActivity('IMPORT_MANUAL', 'Data berhasil diimpor dari file JSON lokal.');
 
                     showMessageModal('Impor Berhasil', 'Data berhasil diimpor dan aplikasi dimuat ulang.', 'text-green-600');
 
@@ -1466,8 +1521,154 @@
             reader.readAsText(file);
         }
 
+        // --- 12. Logic Sinkronisasi Dropbox Baru (Dikonversi Otomatis) ---
 
-        // --- 12. Inisialisasi Aplikasi ---
+        /**
+         * Mengkonversi Shared Link Dropbox ke format Unduhan Langsung (dl.dropboxusercontent.com).
+         * Ini mengatasi masalah CORS/Izin yang sering terjadi saat menggunakan fetch().
+         */
+        function normalizeDropboxLink(link) {
+            if (!link) return '';
+            
+            // 1. Ganti domain dari www.dropbox.com menjadi dl.dropboxusercontent.com
+            // Menggunakan regex untuk menangani berbagai varian link
+            let normalized = link.replace(
+                /^https?:\/\/(www\.)?dropbox\.com\//i, 
+                'https://dl.dropboxusercontent.com/'
+            );
+            
+            // 2. Pastikan parameter dl=1 ada, atau tambahkan jika tidak ada.
+            // Hapus dl=0 atau dl=1 yang sudah ada
+            normalized = normalized.replace(/(&|\?)dl=\d+/i, '');
+
+            // Tambahkan dl=1 sebagai parameter terakhir, menggunakan '?' jika belum ada parameter
+            // atau '&' jika sudah ada parameter lain
+            normalized += (normalized.includes('?') ? '&' : '?') + 'dl=1';
+            
+            return normalized;
+        }
+
+        function loadSyncLink() {
+            const link = localStorage.getItem(DB_LINK_STORAGE_KEY) || '';
+            const linkInput = document.getElementById('dropboxSyncLink');
+            if (linkInput) linkInput.value = link;
+            return link;
+        }
+
+        function saveSyncLink() {
+            const linkInput = document.getElementById('dropboxSyncLink');
+            const rawLink = linkInput.value.trim();
+            
+            if (rawLink) {
+                // --- MODIFIKASI INTI ---
+                const normalizedLink = normalizeDropboxLink(rawLink);
+                // Tampilkan link yang sudah dinormalisasi di input sebagai feedback
+                linkInput.value = normalizedLink;
+                localStorage.setItem(DB_LINK_STORAGE_KEY, normalizedLink);
+                
+                // Peringatan link yang dikonversi
+                showMessageModal('Berhasil Dikonversi & Disimpan', 
+                    'Shared Link Dropbox berhasil dikonversi ke format Unduhan Langsung (`dl.dropboxusercontent.com`) dan disimpan. Link siap digunakan untuk sinkronisasi.', 
+                    'text-green-600'
+                );
+            } else {
+                localStorage.removeItem(DB_LINK_STORAGE_KEY);
+                showMessageModal('Peringatan', 'Shared Link Dropbox dikosongkan.', 'text-orange-500');
+            }
+        }
+
+        async function syncFromDropbox() {
+            const syncUrl = loadSyncLink();
+            
+            // Periksa apakah link sudah dinormalisasi ke domain yang benar
+            if (!syncUrl || !syncUrl.includes('dl.dropboxusercontent.com')) { 
+                 showMessageModal('Gagal Sinkronisasi', 'Shared Link Dropbox belum disetel atau formatnya tidak valid. Harap masukkan link di Pengaturan dan tekan "Simpan Link" terlebih dahulu.', 'text-red-600');
+                 return;
+            }
+
+            const confirmed = await showConfirmModal('Sinkronisasi Cloud', 'Sinkronisasi akan MENGHAPUS SEMUA DATA LOKAL (Produk, Transaksi, Pengaturan) dan memuat data dari Link Dropbox yang disimpan. Lanjutkan?');
+            if (!confirmed) return;
+
+            // Tampilkan pesan loading saat proses unduh
+            showMessageModal('Mengunduh Data...', 'Mencoba mengunduh file backup dari Dropbox. Mohon tunggu.', 'text-blue-500', 0); 
+            
+            try {
+                // Penting: Gunakan { cache: 'no-store' } untuk memastikan browser mengambil file terbaru dari Dropbox
+                const response = await fetch(syncUrl, { cache: 'no-store' }); 
+                
+                if (!response.ok) {
+                    throw new Error(`Gagal mengambil file: ${response.status} ${response.statusText}. Mungkin file tidak ditemukan, izin salah, atau link kadaluarsa.`);
+                }
+                
+                const fileContent = await response.text();
+                const importedData = JSON.parse(fileContent);
+
+                // 1. Validasi Data
+                if (!importedData.products || !importedData.transactions || !importedData.settings) {
+                    throw new Error("Struktur file backup tidak valid (membutuhkan products, transactions, settings).");
+                }
+                
+                // 2. Tunda proses impor, tampilkan modal konfirmasi kedua
+                hideMessageModal(); // Sembunyikan pesan 'Mengunduh Data...'
+                
+                // Panggil modal konfirmasi kedua
+                showSyncConfirmModal(importedData);
+
+            } catch (error) {
+                console.error("Kesalahan Sinkronisasi Dropbox:", error);
+                hideMessageModal();
+                showMessageModal('Gagal Unduh', `Kesalahan saat memuat data dari link. Detail: ${error.message}`, 'text-red-600');
+            }
+        }
+
+        // FUNGSI BARU: Untuk menampilkan modal konfirmasi setelah file berhasil diunduh
+        function showSyncConfirmModal(importedData) {
+            const modal = document.getElementById('syncConfirmModal');
+            const importButton = document.getElementById('syncConfirmButton');
+
+            // Simpan data sebagai atribut data pada tombol konfirmasi agar bisa diakses saat diklik
+            importButton.dataset.importedData = JSON.stringify(importedData);
+            
+            // Tampilkan data timestamp file yang didownload
+            const timestamp = importedData.timestamp ? new Date(importedData.timestamp).toLocaleString('id-ID') : 'Tidak Diketahui';
+            document.getElementById('syncConfirmTimestamp').textContent = timestamp;
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        // FUNGSI BARU: Untuk menjalankan proses impor sebenarnya
+        async function performCloudImport(dataJsonString) {
+            document.getElementById('syncConfirmModal').classList.remove('flex');
+            document.getElementById('syncConfirmModal').classList.add('hidden');
+            
+            // Tampilkan pesan loading saat proses impor
+            showMessageModal('Memproses Impor...', 'Sedang menimpa data lokal dan memuat ulang aplikasi. Mohon tunggu.', 'text-blue-500', 0);
+            
+            try {
+                const importedData = JSON.parse(dataJsonString);
+                
+                // Panggil fungsi inti impor yang sama dengan impor lokal
+                await processImport(importedData); 
+                
+                // Muat ulang tampilan aplikasi setelah impor
+                await loadSettings();
+                await loadProducts();
+                updateTotals();
+                renderCart();
+                switchTab('posView'); 
+                
+                showMessageModal('Sinkronisasi Berhasil!', 'Data Produk, Transaksi, dan Pengaturan berhasil dimuat dari Dropbox.', 'text-green-600');
+                await logActivity('SYNC_DROPBOX', 'Data berhasil disinkronkan dari Dropbox Shared Link.');
+                
+            } catch (error) {
+                console.error("Kesalahan Impor Cloud:", error);
+                showMessageModal('Gagal Impor', `Kesalahan saat memproses data: ${error.message}`, 'text-red-600');
+            }
+        }
+
+
+        // --- 13. Inisialisasi Aplikasi ---
 
         window.onload = async () => {
             if (!window.indexedDB) {
@@ -1479,6 +1680,8 @@
             setupPinModalListeners(); 
             await initDB();
             
+            // Muat Link Sinkronisasi dan pengaturan lainnya
+            loadSyncLink();
             await loadSettings();
             await loadProducts();
             
@@ -1494,6 +1697,15 @@
             });
             document.getElementById('cashierNameInput').addEventListener('input', () => {
                 state.settings.cashierName = document.getElementById('cashierNameInput').value.trim();
+            });
+            
+            // Listener untuk tombol Dropbox
+            document.getElementById('syncFromDropboxButton').addEventListener('click', syncFromDropbox);
+            
+            // MODIFIKASI: Mengubah pesan konfirmasi download
+            document.getElementById('downloadDataButton').addEventListener('click', async () => {
+                await exportData();
+                showMessageModal('Perhatian Upload', 'File JSON bernama **pos_sync_data.json** telah diunduh ke perangkat Anda. Harap unggah file ini secara **manual** ke Shared Folder Dropbox Anda.', 'text-orange-500');
             });
         };
     </script>
